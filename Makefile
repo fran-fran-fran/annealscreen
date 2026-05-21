@@ -97,8 +97,8 @@ ifeq ($(DISPLAY_BACKEND),ANNEAL_DISPLAY_SDL)
     INCLUDES    += $(SDL_CFLAGS)
 endif
 
-CXXFLAGS := $(CXXSTD) $(WARNINGS) $(DEFINES) $(INCLUDES) -O2 -g
-CFLAGS   := $(CSTD) -Wall $(DEFINES) $(INCLUDES) -O2 -g
+CXXFLAGS := $(CXXSTD) $(WARNINGS) $(DEFINES) $(INCLUDES) -D_POSIX_C_SOURCE=200809L -O2 -g
+CFLAGS   := $(CSTD) -Wall $(DEFINES) $(INCLUDES) -D_POSIX_C_SOURCE=200809L -O2 -g
 
 # Common LVGL/helix-xml C flags (suppress warnings in third-party code)
 SUBMOD_CFLAGS := $(CSTD) $(DEFINES) $(INCLUDES) -O2 -w
