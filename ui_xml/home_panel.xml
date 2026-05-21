@@ -82,7 +82,7 @@
                 flex_flow="row" style_pad_gap="#space_xs"
                 style_flex_cross_place="center" scrollable="false">
           <lv_label text="Chamber:"/>
-          <lv_label name="chamber_temp_label" bind_text="annealr_chamber_temp"/>
+          <lv_label name="chamber_temp_label" bind_text="annealr_chamber_temp_text"/>
         </lv_obj>
 
         <lv_obj width="content" height="content"

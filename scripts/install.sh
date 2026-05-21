@@ -27,7 +27,7 @@ set -eu
 
 GITHUB_REPO="fran-fran-fran/annealscreen"
 SERVICE_NAME="annealscreen"
-INSTALL_DIR="${HOME}/annealscreen"
+INSTALL_DIR="/opt/annealscreen"
 TMP_DIR="/tmp/annealscreen-install"
 
 # ── Colors ───────────────────────────────────────────────────────────────
@@ -266,6 +266,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=${KLIPPER_USER}
+SupplementaryGroups=tty video input
 ExecStart=${INSTALL_DIR}/bin/annealscreen -v
 WorkingDirectory=${INSTALL_DIR}
 Restart=on-failure
@@ -470,8 +471,7 @@ main() {
     check_permissions
     detect_klipper_user
     log_info "Klipper user: ${KLIPPER_USER} (${KLIPPER_HOME})"
-
-    INSTALL_DIR="${KLIPPER_HOME}/annealscreen"
+    log_info "Install directory: ${INSTALL_DIR}"
 
     # Handle uninstall
     if [ "$uninstall_mode" = true ]; then
