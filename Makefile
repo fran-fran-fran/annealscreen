@@ -86,7 +86,9 @@ INCLUDES := \
     -isystem lib \
     -isystem $(LVGL_DIR) \
     -isystem lib/spdlog/include \
-    -isystem lib/libhv/include
+    -isystem lib/libhv/include \
+    -isystem lib/libhv/cpputil \
+    -isystem lib/libhv
 
 # SDL flags (native build only)
 ifeq ($(DISPLAY_BACKEND),ANNEAL_DISPLAY_SDL)
@@ -181,7 +183,7 @@ check-deps:
 	    echo "ERROR: spdlog submodule not initialized. Run: make deps"; \
 	    exit 1; \
 	fi
-	@if [ ! -f $(LIBHV_DIR)/include/hv/WebSocketClient.h ]; then \
+	@if [ ! -f $(LIBHV_DIR)/hv/WebSocketClient.h ] && [ ! -f $(LIBHV_DIR)/include/hv/WebSocketClient.h ]; then \
 	    echo "ERROR: libhv submodule not initialized. Run: make deps"; \
 	    exit 1; \
 	fi

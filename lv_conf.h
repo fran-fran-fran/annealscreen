@@ -78,7 +78,7 @@
 #define LV_USE_CHECKBOX    0
 #define LV_USE_BAR         1
 #define LV_USE_LINE        1
-#define LV_USE_ARC         0
+#define LV_USE_ARC         1
 #define LV_USE_IMAGE       1
 #define LV_USE_SPINNER     1
 #define LV_USE_CHART       0
