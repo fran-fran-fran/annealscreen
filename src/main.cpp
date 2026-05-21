@@ -361,14 +361,17 @@ int main(int argc, char** argv) {
     if (cli_port > 0) settings.settings().moonraker_port = cli_port;
 
     // Register XML components and load globals
+    // Must init XML subsystem first (LVGL 9.5 removed XML, helix-xml needs manual init)
+    lv_xml_init();
+
     // LVGL's POSIX filesystem uses 'A:' drive prefix (LV_FS_POSIX_LETTER in lv_conf.h)
     std::string globals_path = "A:" + xml_base + "/globals.xml";
     lv_xml_register_component_from_file(globals_path.c_str());
 
-    std::string home_panel_path = "A:" + xml_base + "/home-panel.xml";
+    std::string home_panel_path = "A:" + xml_base + "/home_panel.xml";
     lv_xml_register_component_from_file(home_panel_path.c_str());
 
-    std::string setup_path = "A:" + xml_base + "/setup-overlay.xml";
+    std::string setup_path = "A:" + xml_base + "/setup_overlay.xml";
     lv_xml_register_component_from_file(setup_path.c_str());
 
     // Init domain state subjects (BEFORE XML creation)
