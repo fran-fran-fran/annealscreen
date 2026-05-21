@@ -27,7 +27,7 @@ set -eu
 
 GITHUB_REPO="fran-fran-fran/annealscreen"
 SERVICE_NAME="annealscreen"
-INSTALL_DIR="/opt/annealscreen"
+INSTALL_DIR="${HOME}/annealscreen"
 TMP_DIR="/tmp/annealscreen-install"
 
 # ── Colors ───────────────────────────────────────────────────────────────
