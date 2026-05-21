@@ -97,11 +97,15 @@ ifeq ($(DISPLAY_BACKEND),ANNEAL_DISPLAY_SDL)
     INCLUDES    += $(SDL_CFLAGS)
 endif
 
-CXXFLAGS := $(CXXSTD) $(WARNINGS) $(DEFINES) $(INCLUDES) -D_POSIX_C_SOURCE=200809L -O2 -g
-CFLAGS   := $(CSTD) -Wall $(DEFINES) $(INCLUDES) -D_POSIX_C_SOURCE=200809L -O2 -g
+CXXFLAGS := $(CXXSTD) $(WARNINGS) $(DEFINES) $(INCLUDES) \
+    -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -O2 -g
+
+CFLAGS := $(CSTD) -Wall $(DEFINES) $(INCLUDES) \
+    -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -O2 -g
 
 # Common LVGL/helix-xml C flags (suppress warnings in third-party code)
-SUBMOD_CFLAGS := $(CSTD) $(DEFINES) $(INCLUDES) -O2 -w
+SUBMOD_CFLAGS := $(CSTD) $(DEFINES) $(INCLUDES) \
+    -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -O2 -w
 
 # ── Linker ───────────────────────────────────────────────────────────────
 
@@ -163,8 +167,14 @@ LIBHV_STAMP := $(BUILD_DIR)/.libhv_built
 $(LIBHV_STAMP): $(LIBHV_DIR)/CMakeLists.txt
 	@echo "==> Building libhv..."
 	cd $(LIBHV_DIR) && mkdir -p build && cd build && \
-	cmake .. -DBUILD_SHARED=OFF -DBUILD_EXAMPLES=OFF -DBUILD_UNITTEST=OFF \
-	    -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
+	cmake .. \
+		-DBUILD_SHARED=OFF \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_UNITTEST=OFF \
+	    -DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+		-DCMAKE_C_FLAGS="-D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L" \
+		-DCMAKE_CXX_FLAGS="-D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L" && \
 	make -j$$(nproc) hv_static
 	@mkdir -p $(LIBHV_DIR)/lib
 	cp $(LIBHV_DIR)/build/lib/libhv*.a $(LIBHV_DIR)/lib/libhv.a
