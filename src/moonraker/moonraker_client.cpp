@@ -180,14 +180,24 @@ void MoonrakerClient::query_config(
         std::lock_guard<std::mutex> lock(id_mutex_);
         id = next_id_++;
         pending_requests_[id] = [callback](const nlohmann::json& result) {
-            if (result.contains("config")) {
-                callback(result["config"]);
+            // Moonraker response path: result.status.configfile.config
+            // (our on_message already extracts "result", so we get status.configfile.config)
+            if (result.contains("status") &&
+                result["status"].contains("configfile") &&
+                result["status"]["configfile"].contains("config")) {
+                callback(result["status"]["configfile"]["config"]);
             } else {
-                spdlog::warn("[Moonraker] Config response missing 'config' key");
+                spdlog::warn("[Moonraker] Config response missing expected path "
+                             "status.configfile.config");
+                if (!result.empty()) {
+                    spdlog::debug("[Moonraker] Config response keys: {}",
+                                  result.dump().substr(0, 200));
+                }
             }
         };
     }
 
+    // Query configfile requesting "config" key (raw string values)
     send_jsonrpc("printer.objects.query",
                  {{"objects", {{"configfile", {"config"}}}}}, id);
 }
