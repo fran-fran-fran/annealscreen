@@ -1,6 +1,6 @@
 # AnnealScreen
 
-Standalone LVGL touchscreen UI for the [annealr](https://github.com/YOUR_USERNAME/annealr) Klipper plugin. Controls PID-based annealing and drying runs from a dedicated touchscreen display.
+Standalone LVGL touchscreen UI for the [annealr](https://github.com/fran-fran-fran/annealr) Klipper plugin. Controls temperature profiling for annealing and drying runs from a dedicated touchscreen display.
 
 Built from the ground up following [HelixScreen](https://github.com/prestonbrown/helixscreen) architecture patterns, reusing its XML engine and infrastructure while removing all printing-specific code.
 
@@ -29,7 +29,7 @@ Built from the ground up following [HelixScreen](https://github.com/prestonbrown
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/YOUR_USERNAME/annealscreen.git
+git clone --recursive https://github.com/fran-fran-fran/annealscreen.git
 cd annealscreen
 
 # Build (requires SDL2 dev packages)
@@ -45,7 +45,7 @@ make -j
 
 ```bash
 # Clone on the Pi
-git clone --recursive https://github.com/YOUR_USERNAME/annealscreen.git
+git clone --recursive https://github.com/fran-fran-fran/annealscreen.git
 cd annealscreen
 
 # Build natively
