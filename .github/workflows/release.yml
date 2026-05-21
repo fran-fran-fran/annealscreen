@@ -22,7 +22,8 @@ jobs:
             g++ \
             gcc \
             crossbuild-essential-arm64 \
-            ca-certificates
+            ca-certificates \
+            zip
 
       - name: Checkout repository
         uses: actions/checkout@v4
