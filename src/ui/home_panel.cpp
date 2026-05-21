@@ -301,7 +301,7 @@ void HomePanel::draw_chart(lv_event_t* e) {
         lv_draw_label_dsc_t label_dsc;
         lv_draw_label_dsc_init(&label_dsc);
         label_dsc.color = COLOR_GRID_TEXT;
-        label_dsc.font = lv_font_default();
+        label_dsc.font = lv_font_get_default();
         label_dsc.text = "Select a profile";
         label_dsc.align = LV_TEXT_ALIGN_CENTER;
 
@@ -458,7 +458,7 @@ void HomePanel::draw_grid(lv_layer_t* layer, lv_area_t* area,
     lv_draw_label_dsc_t label_dsc;
     lv_draw_label_dsc_init(&label_dsc);
     label_dsc.color = COLOR_GRID_TEXT;
-    label_dsc.font = lv_font_default();
+    label_dsc.font = lv_font_get_default();
 
     // Temperature grid (horizontal lines)
     float temp_step = nice_step(temp_range, 5);

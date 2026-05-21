@@ -49,6 +49,11 @@ HELIX_XML_SRCS := $(shell find $(HELIX_XML_DIR)/src/xml -name '*.c' 2>/dev/null)
                   $(shell find $(HELIX_XML_DIR)/src/libs/expat -name '*.c' 2>/dev/null)
 HELIX_XML_OBJS := $(patsubst $(HELIX_XML_DIR)/%.c,$(OBJ_DIR)/helix-xml/%.o,$(HELIX_XML_SRCS))
 
+# ── Font sources (C files compiled separately) ──────────────────────────
+
+FONT_SRCS := $(wildcard assets/fonts/*.c)
+FONT_OBJS := $(patsubst assets/%.c,$(OBJ_DIR)/assets/%.o,$(FONT_SRCS))
+
 # ── Toolchain ────────────────────────────────────────────────────────────
 
 CXX      ?= g++
@@ -135,9 +140,9 @@ help:
 
 # ── Link ─────────────────────────────────────────────────────────────────
 
-$(BIN_DIR)/$(BIN_NAME): $(OBJS) $(LVGL_OBJS) $(HELIX_XML_OBJS) $(LIBHV_LIB)
+$(BIN_DIR)/$(BIN_NAME): $(OBJS) $(LVGL_OBJS) $(HELIX_XML_OBJS) $(FONT_OBJS) $(LIBHV_LIB)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(OBJS) $(LVGL_OBJS) $(HELIX_XML_OBJS) $(LIBHV_LIB) -o $@ $(LDFLAGS)
+	$(CXX) $(OBJS) $(LVGL_OBJS) $(HELIX_XML_OBJS) $(FONT_OBJS) $(LIBHV_LIB) -o $@ $(LDFLAGS)
 	@echo "==> Built: $@"
 
 # ── C++ objects ──────────────────────────────────────────────────────────
@@ -155,6 +160,12 @@ $(OBJ_DIR)/lvgl/%.o: $(LVGL_DIR)/%.c
 # ── helix-xml objects ────────────────────────────────────────────────────
 
 $(OBJ_DIR)/helix-xml/%.o: $(HELIX_XML_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(SUBMOD_CFLAGS) -c $< -o $@
+
+# ── Font objects ─────────────────────────────────────────────────────────
+
+$(OBJ_DIR)/assets/%.o: assets/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(SUBMOD_CFLAGS) -c $< -o $@
 
