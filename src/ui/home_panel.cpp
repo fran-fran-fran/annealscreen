@@ -219,6 +219,9 @@ void HomePanel::update_button_states() {
     bool is_paused     = state_.is_paused();
     bool can_cancel    = state_.is_run_active();
 
+    spdlog::debug("[HomePanel] Button update: state='{}' start={} pause={} resume={} cancel={}",
+                  state_.current_state_str(), can_start, is_running, is_paused, can_cancel);
+
     lv_subject_set_int(&can_start_,  can_start  ? 1 : 0);
     lv_subject_set_int(&can_pause_,  is_running ? 1 : 0);
     lv_subject_set_int(&can_resume_, is_paused  ? 1 : 0);
@@ -461,6 +464,12 @@ void HomePanel::draw_grid(lv_layer_t* layer, lv_area_t* area,
     label_dsc.font = lv_font_get_default();
 
     // Temperature grid (horizontal lines)
+    // Static buffers: LVGL may defer draw, stack pointers would be stale.
+    // HelixScreen uses the same pattern in draw_y_axis_labels_cb.
+    static char y_label_bufs[8][16];
+    static int y_label_idx = 0;
+    y_label_idx = 0;
+
     float temp_step = nice_step(temp_range, 5);
     float t_tick = std::ceil(temp_min / temp_step) * temp_step;
     while (t_tick <= temp_max) {
@@ -471,8 +480,8 @@ void HomePanel::draw_grid(lv_layer_t* layer, lv_area_t* area,
         line_dsc.p2.x = area->x2; line_dsc.p2.y = py;
         lv_draw_line(layer, &line_dsc);
 
-        char buf[16];
-        std::snprintf(buf, sizeof(buf), "%d°C", static_cast<int>(t_tick));
+        char* buf = y_label_bufs[y_label_idx++ % 8];
+        std::snprintf(buf, 16, "%d\xC2\xB0", static_cast<int>(t_tick));
         label_dsc.text = buf;
 
         lv_area_t label_area;
@@ -486,6 +495,10 @@ void HomePanel::draw_grid(lv_layer_t* layer, lv_area_t* area,
     }
 
     // Time grid (vertical lines)
+    static char x_label_bufs[8][16];
+    static int x_label_idx = 0;
+    x_label_idx = 0;
+
     float time_step = nice_time_step(time_range, 6);
     float time_tick = std::ceil(time_min / time_step) * time_step;
     while (time_tick <= time_max) {
@@ -497,11 +510,11 @@ void HomePanel::draw_grid(lv_layer_t* layer, lv_area_t* area,
         lv_draw_line(layer, &line_dsc);
 
         int mins = static_cast<int>(time_tick / 60.0f);
-        char buf[16];
+        char* buf = x_label_bufs[x_label_idx++ % 8];
         if (mins >= 60)
-            std::snprintf(buf, sizeof(buf), "%dh%dm", mins / 60, mins % 60);
+            std::snprintf(buf, 16, "%dh%dm", mins / 60, mins % 60);
         else
-            std::snprintf(buf, sizeof(buf), "%dm", mins);
+            std::snprintf(buf, 16, "%dm", mins);
 
         label_dsc.text = buf;
         label_dsc.align = LV_TEXT_ALIGN_CENTER;

@@ -77,6 +77,7 @@ class AnnealrState {
     lv_subject_t* profiles_version_subject() { return &profiles_version_; }
     lv_subject_t* chamber_temp_subject()   { return &chamber_temp_; }
     lv_subject_t* chamber_target_subject() { return &chamber_target_; }
+    lv_subject_t* chamber_temp_text_subject() { return &chamber_temp_text_; }
 
     // ── Profile access ──────────────────────────────────────────────
 
@@ -129,14 +130,16 @@ class AnnealrState {
     lv_subject_t run_elapsed_s_{};
     lv_subject_t status_text_{};
     lv_subject_t profiles_version_{};
-    lv_subject_t chamber_temp_{};     // centidegrees (int)
+    lv_subject_t chamber_temp_{};     // centidegrees (int) - for chart
     lv_subject_t chamber_target_{};   // centidegrees (int)
+    lv_subject_t chamber_temp_text_{}; // formatted "28.6°C" for display
 
     // Static buffers for string subjects
     char state_buf_[32]        = "idle";
     char profile_name_buf_[64] = "";
     char stage_label_buf_[128] = "";
     char status_text_buf_[512] = "";
+    char chamber_temp_text_buf_[32] = "";
 
     // Profile storage
     std::vector<AnnealrProfile> profiles_;

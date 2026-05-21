@@ -106,6 +106,10 @@ void AnnealrState::init_subjects() {
     lv_subject_init_int(&chamber_temp_, 220);   // 22.0°C default
     lv_subject_init_int(&chamber_target_, 0);
 
+    std::strncpy(chamber_temp_text_buf_, "22.0\xC2\xB0""C", sizeof(chamber_temp_text_buf_));
+    lv_subject_init_string(&chamber_temp_text_, chamber_temp_text_buf_, nullptr,
+                           sizeof(chamber_temp_text_buf_), "22.0\xC2\xB0""C");
+
     // Register globally so XML bind_text/bind_value can find them
     lv_xml_register_subject(nullptr, "annealr_state", &state_);
     lv_xml_register_subject(nullptr, "annealr_profile_name", &profile_name_);
@@ -121,6 +125,7 @@ void AnnealrState::init_subjects() {
     lv_xml_register_subject(nullptr, "annealr_profiles_version", &profiles_version_);
     lv_xml_register_subject(nullptr, "annealr_chamber_temp", &chamber_temp_);
     lv_xml_register_subject(nullptr, "annealr_chamber_target", &chamber_target_);
+    lv_xml_register_subject(nullptr, "annealr_chamber_temp_text", &chamber_temp_text_);
 
     initialized_ = true;
 
@@ -147,6 +152,7 @@ void AnnealrState::deinit_subjects() {
     lv_subject_deinit(&profiles_version_);
     lv_subject_deinit(&chamber_temp_);
     lv_subject_deinit(&chamber_target_);
+    lv_subject_deinit(&chamber_temp_text_);
 
     initialized_ = false;
 }
@@ -388,8 +394,13 @@ void AnnealrState::update_status_text(
 void AnnealrState::record_temperature(float temp_c, float run_elapsed_s) {
     // Update chamber temp subject on LVGL thread
     int centi = static_cast<int>(temp_c * 10);
-    anneal::ui::queue_update([this, centi]() {
+    anneal::ui::queue_update([this, centi, temp_c]() {
         lv_subject_set_int(&chamber_temp_, centi);
+
+        // Format display string: "28.6°C"  (°= UTF-8 0xC2 0xB0)
+        std::snprintf(chamber_temp_text_buf_, sizeof(chamber_temp_text_buf_),
+                      "%.1f\xC2\xB0""C", temp_c);
+        lv_subject_copy_string(&chamber_temp_text_, chamber_temp_text_buf_);
     });
 
     // Store history (thread-safe)

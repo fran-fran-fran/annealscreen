@@ -28,6 +28,12 @@
 #include <string>
 #include <thread>
 
+#ifdef ANNEAL_DISPLAY_FBDEV
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/kd.h>
+#endif
+
 namespace fs = std::filesystem;
 
 #ifndef ANNEAL_VERSION
@@ -196,6 +202,12 @@ static void start_connection(const std::string& host, int port,
                                        static_cast<int>(temp * 10));
                     lv_subject_set_int(state.chamber_target_subject(),
                                        static_cast<int>(target * 10));
+
+                    // Format display text: "28.6°C"
+                    char buf[32];
+                    std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
+                    auto* text_subj = state.chamber_temp_text_subject();
+                    lv_subject_copy_string(text_subj, buf);
                 });
 
                 // Record for chart if run is active
@@ -337,6 +349,29 @@ int main(int argc, char** argv) {
                                          "/dev/input/event0");
     (void)touch;
     spdlog::info("Display: fbdev /dev/fb0");
+
+    // Suppress Linux console cursor/text on framebuffer (HelixScreen pattern).
+    // Switch VT to KD_GRAPHICS mode so kernel stops rendering console text.
+    {
+        static const char* tty_paths[] = {"/dev/tty0", "/dev/tty1", "/dev/tty", nullptr};
+        int tty_fd = -1;
+        for (int i = 0; tty_paths[i] != nullptr; ++i) {
+            tty_fd = open(tty_paths[i], O_WRONLY | O_CLOEXEC);
+            if (tty_fd >= 0) {
+                if (ioctl(tty_fd, KDSETMODE, KD_GRAPHICS) == 0) {
+                    spdlog::info("Console suppressed via KD_GRAPHICS on {}", tty_paths[i]);
+                    // Keep fd open for the lifetime of the process
+                    break;
+                }
+                spdlog::debug("KDSETMODE failed on {}: {}", tty_paths[i], strerror(errno));
+                close(tty_fd);
+                tty_fd = -1;
+            }
+        }
+        if (tty_fd < 0) {
+            spdlog::warn("Could not suppress console cursor");
+        }
+    }
 #else
     #error "Define ANNEAL_DISPLAY_SDL or ANNEAL_DISPLAY_FBDEV"
 #endif
