@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/annealscreen/main/scripts/install.sh | sh
+#   curl -sSL https://raw.githubusercontent.com/fran-fran-fran/annealscreen/main/scripts/install.sh | sh
 #
 # Or download and run:
-#   wget https://raw.githubusercontent.com/YOUR_USERNAME/annealscreen/main/scripts/install.sh
+#   wget https://raw.githubusercontent.com/fran-fran-fran/annealscreen/main/scripts/install.sh
 #   chmod +x install.sh
 #   ./install.sh
 #
@@ -25,7 +25,7 @@ set -eu
 
 # ── Configuration ────────────────────────────────────────────────────────
 
-GITHUB_REPO="YOUR_USERNAME/annealscreen"
+GITHUB_REPO="fran-fran-fran/annealscreen"
 SERVICE_NAME="annealscreen"
 INSTALL_DIR="${HOME}/annealscreen"
 TMP_DIR="/tmp/annealscreen-install"

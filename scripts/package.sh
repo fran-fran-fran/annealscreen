@@ -63,7 +63,7 @@ package_platform() {
     local version
     version=$("$binary" --version 2>/dev/null | head -1 || echo "dev")
     cat > "$pkg/release_info.json" << EOF
-{"project_name":"annealscreen","project_owner":"YOUR_USERNAME","version":"${version}"}
+{"project_name":"annealscreen","project_owner":"fran-fran-fran","version":"${version}"}
 EOF
 
     # Create zip (flat layout — installer extracts directly to INSTALL_DIR)
