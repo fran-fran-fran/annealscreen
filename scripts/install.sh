@@ -261,17 +261,37 @@ install_service() {
 [Unit]
 Description=AnnealScreen - Touchscreen UI for annealr
 After=network-online.target klipper.service moonraker.service
+After=systemd-udev-settle.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=${KLIPPER_USER}
-SupplementaryGroups=tty video input
-ExecStart=${INSTALL_DIR}/bin/annealscreen -v
+
 WorkingDirectory=${INSTALL_DIR}
+
+# Unbind framebuffer console before starting (runs as root via + prefix).
+# Prevents kernel messages and login prompt from painting over the UI.
+# This is the primary mechanism — matches HelixScreen's approach.
+ExecStartPre=+/bin/sh -c 'for f in /sys/class/vtconsole/vtcon*/bind; do echo 0 > "\$\$f" 2>/dev/null || true; done'
+
+ExecStart=${INSTALL_DIR}/bin/annealscreen -v
+
 Restart=on-failure
 RestartSec=5
+
 Environment=HOME=${KLIPPER_HOME}
+
+# Device access groups
+SupplementaryGroups=tty video input
+
+# CAP_SYS_TTY_CONFIG: allows KDSETMODE KD_GRAPHICS as backup console suppression
+AmbientCapabilities=CAP_SYS_TTY_CONFIG
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=annealscreen
 
 [Install]
 WantedBy=multi-user.target
