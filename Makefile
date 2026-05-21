@@ -112,7 +112,7 @@ endif
 
 # libhv (static)
 LIBHV_DIR := lib/libhv
-LIBHV_LIB := $(LIBHV_DIR)/lib/libhv_static.a
+LIBHV_LIB := $(LIBHV_DIR)/lib/libhv.a
 
 # ── Targets ──────────────────────────────────────────────────────────────
 
@@ -167,7 +167,7 @@ $(LIBHV_STAMP): $(LIBHV_DIR)/CMakeLists.txt
 	    -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
 	make -j$$(nproc) hv_static
 	@mkdir -p $(LIBHV_DIR)/lib
-	cp $(LIBHV_DIR)/build/lib/libhv_static.a $(LIBHV_DIR)/lib/
+	cp $(LIBHV_DIR)/build/lib/libhv*.a $(LIBHV_DIR)/lib/libhv.a
 	@mkdir -p $(BUILD_DIR)
 	@touch $@
 
@@ -210,7 +210,7 @@ pi-docker:
 
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -f $(LIBHV_DIR)/lib/libhv_static.a
+	rm -f $(LIBHV_DIR)/lib/libhv.a
 	rm -rf $(LIBHV_DIR)/build
 	rm -rf $(LIBHV_DIR)/include
 

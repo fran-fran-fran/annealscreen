@@ -68,7 +68,7 @@
 // ── Widgets ─────────────────────────────────────────────────────────────
 #define LV_USE_LABEL       1
 #define LV_USE_BUTTON      1
-#define LV_USE_BUTTONMATRIX 0
+#define LV_USE_BUTTONMATRIX 1
 #define LV_USE_DROPDOWN    1
 #define LV_USE_ROLLER      0
 #define LV_USE_SLIDER      0
