@@ -8,23 +8,38 @@ on:
 jobs:
   build-pi:
     runs-on: ubuntu-24.04
+
+    container: debian:12
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            git \
+            make \
+            cmake \
+            g++ \
+            gcc \
+            crossbuild-essential-arm64 \
+            ca-certificates
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install cross-compilation toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y crossbuild-essential-arm64 cmake
-
       - name: Build for Pi (aarch64)
-        run: make -j$(nproc) ANNEAL_TARGET=pi CXX=aarch64-linux-gnu-g++ CC=aarch64-linux-gnu-gcc
+        run: |
+          make -j$(nproc) ANNEAL_TARGET=pi \
+            CXX=aarch64-linux-gnu-g++ \
+            CC=aarch64-linux-gnu-gcc
 
       - name: Package
         run: ./scripts/package.sh pi
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: annealscreen-pi
           path: build/release/annealscreen-pi.zip
