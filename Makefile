@@ -154,9 +154,13 @@ $(OBJ_DIR)/helix-xml/%.o: $(HELIX_XML_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(SUBMOD_CFLAGS) -c $< -o $@
 
-# ── libhv (build static library) ────────────────────────────────────────
+# ── libhv (build static library + generate headers) ─────────────────────
+# cmake populates lib/libhv/include/hv/ which our C++ code includes.
+# The stamp file ensures cmake runs once before any C++ compilation.
 
-$(LIBHV_LIB):
+LIBHV_STAMP := $(BUILD_DIR)/.libhv_built
+
+$(LIBHV_STAMP): $(LIBHV_DIR)/CMakeLists.txt
 	@echo "==> Building libhv..."
 	cd $(LIBHV_DIR) && mkdir -p build && cd build && \
 	cmake .. -DBUILD_SHARED=OFF -DBUILD_EXAMPLES=OFF -DBUILD_UNITTEST=OFF \
@@ -164,6 +168,13 @@ $(LIBHV_LIB):
 	make -j$$(nproc) hv_static
 	@mkdir -p $(LIBHV_DIR)/lib
 	cp $(LIBHV_DIR)/build/lib/libhv_static.a $(LIBHV_DIR)/lib/
+	@mkdir -p $(BUILD_DIR)
+	@touch $@
+
+$(LIBHV_LIB): $(LIBHV_STAMP)
+
+# C++ objects depend on libhv being built (for include/hv/ headers)
+$(OBJS): $(LIBHV_STAMP)
 
 # ── Dependencies ─────────────────────────────────────────────────────────
 
@@ -183,7 +194,7 @@ check-deps:
 	    echo "ERROR: spdlog submodule not initialized. Run: make deps"; \
 	    exit 1; \
 	fi
-	@if [ ! -f $(LIBHV_DIR)/hv/WebSocketClient.h ] && [ ! -f $(LIBHV_DIR)/include/hv/WebSocketClient.h ]; then \
+	@if [ ! -f $(LIBHV_DIR)/CMakeLists.txt ]; then \
 	    echo "ERROR: libhv submodule not initialized. Run: make deps"; \
 	    exit 1; \
 	fi
@@ -201,6 +212,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(LIBHV_DIR)/lib/libhv_static.a
 	rm -rf $(LIBHV_DIR)/build
+	rm -rf $(LIBHV_DIR)/include
 
 # ── Compile commands for IDE support ─────────────────────────────────────
 
