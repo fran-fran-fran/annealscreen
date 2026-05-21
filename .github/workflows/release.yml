@@ -1,0 +1,68 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-pi:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install cross-compilation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-arm64 cmake
+
+      - name: Build for Pi (aarch64)
+        run: make -j$(nproc) ANNEAL_TARGET=pi CXX=aarch64-linux-gnu-g++ CC=aarch64-linux-gnu-gcc
+
+      - name: Package
+        run: ./scripts/package.sh pi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: annealscreen-pi
+          path: build/release/annealscreen-pi.zip
+
+  build-x86:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev cmake
+
+      - name: Build for x86
+        run: make -j$(nproc)
+
+      - name: Package
+        run: ./scripts/package.sh x86
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: annealscreen-x86
+          path: build/release/annealscreen-x86.zip
+
+  release:
+    needs: [build-pi, build-x86]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            annealscreen-pi/annealscreen-pi.zip
+            annealscreen-x86/annealscreen-x86.zip
+          generate_release_notes: true

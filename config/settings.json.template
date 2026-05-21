@@ -1,0 +1,6 @@
+{
+  "moonraker_host": "localhost",
+  "moonraker_port": 7125,
+  "heater_name": "annealer",
+  "dark_mode": true
+}

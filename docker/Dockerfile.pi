@@ -1,0 +1,21 @@
+# AnnealScreen Pi cross-compilation Docker image
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Usage:
+#   docker build -t annealscreen-pi -f docker/Dockerfile.pi .
+#   docker run --rm -v $(pwd):/src -w /src annealscreen-pi make ANNEAL_TARGET=pi
+
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    crossbuild-essential-arm64 \
+    git \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cross-compilation defaults
+ENV CC=aarch64-linux-gnu-gcc \
+    CXX=aarch64-linux-gnu-g++ \
+    ANNEAL_TARGET=pi

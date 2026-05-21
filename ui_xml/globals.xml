@@ -1,0 +1,88 @@
+<!--
+  AnnealScreen globals.xml — Design tokens and shared styles.
+  Edit this file to change the application's look without rebuilding.
+  Colors are registered from config/themes/dark.json at runtime.
+  Spacing tokens are registered from C++ (ThemeManager::register_spacing_tokens).
+-->
+<globals>
+    <fonts>
+        <font name="font_heading" font_family="montserrat" font_size="20" font_weight="600"/>
+        <font name="font_body"    font_family="montserrat" font_size="16" font_weight="400"/>
+        <font name="font_small"   font_family="montserrat" font_size="14" font_weight="400"/>
+    </fonts>
+
+    <styles>
+        <!-- Card container: rounded, elevated background -->
+        <style name="card"
+            style_bg_color="#card_bg"
+            style_bg_opa="255"
+            style_radius="#border_radius"
+            style_pad_all="#space_md"
+            style_border_width="1"
+            style_border_color="#border"
+            style_border_opa="80"
+        />
+
+        <!-- Section header text -->
+        <style name="section_header"
+            style_text_color="#text"
+            style_text_font="font_heading"
+            style_pad_bottom="#space_sm"
+        />
+
+        <!-- Muted helper text -->
+        <style name="text_muted"
+            style_text_color="#text_muted"
+            style_text_font="font_small"
+        />
+
+        <!-- Primary action button -->
+        <style name="btn_primary"
+            style_bg_color="#primary"
+            style_bg_opa="255"
+            style_text_color="#text"
+            style_radius="6"
+            style_pad_hor="16"
+            style_pad_ver="8"
+            style_min_height="#button_height"
+        />
+
+        <!-- Danger action button -->
+        <style name="btn_danger"
+            style_bg_color="#danger"
+            style_bg_opa="255"
+            style_text_color="#text"
+            style_radius="6"
+            style_pad_hor="16"
+            style_pad_ver="8"
+            style_min_height="#button_height"
+        />
+
+        <!-- Disabled state overlay -->
+        <style name="disabled"
+            style_bg_opa="80"
+            style_text_opa="100"
+        />
+
+        <!-- Chart canvas background -->
+        <style name="chart_bg"
+            style_bg_color="#overlay_bg"
+            style_bg_opa="255"
+            style_radius="#border_radius"
+            style_pad_all="0"
+        />
+
+        <!-- Status text area -->
+        <style name="status_text"
+            style_text_color="#text_muted"
+            style_text_font="font_small"
+            style_pad_all="#space_sm"
+        />
+
+        <!-- Divider line -->
+        <style name="divider"
+            style_bg_color="#border"
+            style_bg_opa="120"
+        />
+    </styles>
+</globals>

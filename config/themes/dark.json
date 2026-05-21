@@ -1,0 +1,21 @@
+{
+  "name": "dark",
+  "colors": {
+    "screen_bg":   "#1A1A2E",
+    "card_bg":     "#25253E",
+    "elevated_bg": "#2D2D4A",
+    "overlay_bg":  "#0F0F1A",
+    "border":      "#3A3A52",
+    "text":        "#E8E8F0",
+    "text_muted":  "#A8A8B8",
+    "text_subtle": "#707088",
+    "primary":     "#6C63FF",
+    "secondary":   "#2EC4B6",
+    "tertiary":    "#FF6B6B",
+    "info":        "#4DA6FF",
+    "success":     "#4CAF50",
+    "warning":     "#FFA726",
+    "danger":      "#EF5350",
+    "focus":       "#6C63FF"
+  }
+}

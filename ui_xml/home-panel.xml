@@ -1,0 +1,203 @@
+<!--
+  AnnealScreen Home Panel
+  ========================
+  The only panel in the application. Uses flex layout with proportional
+  sizing — no hardcoded pixel widths except minimum touch targets.
+
+  Layout:
+  ┌─────────────────────────────────────────────────────────┐
+  │ ┌─────────────┐ ┌─────────────────────────────────────┐ │
+  │ │  Profiles   │ │                                     │ │
+  │ │  (list)     │ │         Temperature Chart           │ │
+  │ │             │ │                                     │ │
+  │ ├─────────────┤ │                                     │ │
+  │ │ Status text │ │                                     │ │
+  │ ├─────────────┤ ├─────────────────────────────────────┤ │
+  │ │ [Start]     │ │  Status: Idle | 85°C → 140°C | 72% │ │
+  │ │ [Pause]     │ │  Profile: PLA-Anneal  Stage 2/3    │ │
+  │ │ [Cancel]    │ └─────────────────────────────────────┘ │
+  │ └─────────────┘                                         │
+  └─────────────────────────────────────────────────────────┘
+
+  Edit this file to change the layout. No rebuild needed — just restart.
+-->
+<component>
+    <!-- Root: horizontal flex, fills parent -->
+    <lv_obj name="home_root"
+        width="100%"
+        height="100%"
+        style_bg_opa="0"
+        style_pad_all="#space_md"
+        style_pad_gap="#space_md"
+        style_flex_flow="row"
+        style_border_width="0"
+    >
+        <!-- ═══ Left sidebar: profiles + controls ═══ -->
+        <lv_obj name="sidebar"
+            width="30%"
+            height="100%"
+            style_flex_flow="column"
+            style_pad_all="0"
+            style_pad_gap="#space_sm"
+            style_bg_opa="0"
+            style_border_width="0"
+        >
+            <!-- Section header -->
+            <lv_label
+                text="Profiles"
+                style_text_font="font_heading"
+                style_text_color="#text"
+                style_pad_left="#space_sm"
+            />
+
+            <!-- Profile list: flex-grow takes remaining space -->
+            <lv_obj name="annealr_profile_list"
+                width="100%"
+                style_flex_grow="1"
+                styles="card"
+                style_flex_flow="column"
+                style_pad_all="#space_xs"
+                style_pad_gap="#space_xs"
+                style_overflow="scroll"
+            />
+
+            <!-- Status text bound to annealr_status_text subject -->
+            <lv_label name="status_label"
+                width="100%"
+                bind_text="annealr_status_text"
+                styles="status_text"
+                style_text_align="left"
+            />
+
+            <!-- ─── Control buttons ─── -->
+            <lv_obj name="button_row"
+                width="100%"
+                height="content"
+                style_flex_flow="column"
+                style_pad_all="0"
+                style_pad_gap="#space_xs"
+                style_bg_opa="0"
+                style_border_width="0"
+            >
+                <!-- Start button: visible when can_start == 1 -->
+                <lv_button name="btn_start"
+                    width="100%"
+                    styles="btn_primary"
+                >
+                    <lv_label text="Start" style_text_color="#text"/>
+                    <bind_flag_if_eq subject="annealr_can_start"
+                        flag="hidden" ref_value="0"/>
+                    <event_cb trigger="clicked" callback="on_annealr_start"/>
+                </lv_button>
+
+                <!-- Pause button: visible when can_pause == 1 -->
+                <lv_button name="btn_pause"
+                    width="100%"
+                    styles="btn_primary"
+                >
+                    <lv_label text="Pause" style_text_color="#text"/>
+                    <bind_flag_if_eq subject="annealr_can_pause"
+                        flag="hidden" ref_value="0"/>
+                    <event_cb trigger="clicked" callback="on_annealr_pause"/>
+                </lv_button>
+
+                <!-- Resume button: visible when can_resume == 1 -->
+                <lv_button name="btn_resume"
+                    width="100%"
+                    styles="btn_primary"
+                >
+                    <lv_label text="Resume" style_text_color="#text"/>
+                    <bind_flag_if_eq subject="annealr_can_resume"
+                        flag="hidden" ref_value="0"/>
+                    <event_cb trigger="clicked" callback="on_annealr_resume"/>
+                </lv_button>
+
+                <!-- Cancel button: visible when can_cancel == 1 -->
+                <lv_button name="btn_cancel"
+                    width="100%"
+                    styles="btn_danger"
+                >
+                    <lv_label text="Cancel" style_text_color="#text"/>
+                    <bind_flag_if_eq subject="annealr_can_cancel"
+                        flag="hidden" ref_value="0"/>
+                    <event_cb trigger="clicked" callback="on_annealr_cancel"/>
+                </lv_button>
+            </lv_obj>
+        </lv_obj>
+
+        <!-- ═══ Right area: chart + info bar ═══ -->
+        <lv_obj name="main_area"
+            height="100%"
+            style_flex_grow="1"
+            style_flex_flow="column"
+            style_pad_all="0"
+            style_pad_gap="#space_sm"
+            style_bg_opa="0"
+            style_border_width="0"
+        >
+            <!-- Temperature chart: flex-grow fills available space -->
+            <lv_obj name="annealr_chart"
+                width="100%"
+                style_flex_grow="1"
+                styles="chart_bg"
+            />
+
+            <!-- Bottom info bar -->
+            <lv_obj name="info_bar"
+                width="100%"
+                height="content"
+                styles="card"
+                style_flex_flow="row"
+                style_pad_all="#space_sm"
+                style_pad_gap="#space_lg"
+                style_flex_main_place="space-evenly"
+                style_flex_cross_place="center"
+            >
+                <!-- Chamber temperature -->
+                <lv_obj style_bg_opa="0" style_border_width="0"
+                    width="content" height="content"
+                    style_flex_flow="row" style_pad_gap="#space_xs"
+                    style_flex_cross_place="center"
+                >
+                    <lv_label text="Chamber:"
+                        style_text_color="#text_muted"
+                        style_text_font="font_small"/>
+                    <lv_label name="chamber_temp_label"
+                        bind_text="annealr_chamber_temp"
+                        style_text_color="#text"
+                        style_text_font="font_body"/>
+                </lv_obj>
+
+                <!-- Stage progress -->
+                <lv_obj style_bg_opa="0" style_border_width="0"
+                    width="content" height="content"
+                    style_flex_flow="row" style_pad_gap="#space_xs"
+                    style_flex_cross_place="center"
+                >
+                    <lv_label text="Stage:"
+                        style_text_color="#text_muted"
+                        style_text_font="font_small"/>
+                    <lv_label name="stage_label"
+                        bind_text="annealr_stage_label"
+                        style_text_color="#text"
+                        style_text_font="font_body"/>
+                </lv_obj>
+
+                <!-- Active profile name -->
+                <lv_obj style_bg_opa="0" style_border_width="0"
+                    width="content" height="content"
+                    style_flex_flow="row" style_pad_gap="#space_xs"
+                    style_flex_cross_place="center"
+                >
+                    <lv_label text="Profile:"
+                        style_text_color="#text_muted"
+                        style_text_font="font_small"/>
+                    <lv_label name="profile_label"
+                        bind_text="annealr_profile_name"
+                        style_text_color="#text"
+                        style_text_font="font_body"/>
+                </lv_obj>
+            </lv_obj>
+        </lv_obj>
+    </lv_obj>
+</component>

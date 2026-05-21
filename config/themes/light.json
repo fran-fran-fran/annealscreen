@@ -1,0 +1,21 @@
+{
+  "name": "light",
+  "colors": {
+    "screen_bg":   "#F5F5FA",
+    "card_bg":     "#FFFFFF",
+    "elevated_bg": "#FAFAFE",
+    "overlay_bg":  "#E8E8F0",
+    "border":      "#D0D0DC",
+    "text":        "#1A1A2E",
+    "text_muted":  "#5A5A72",
+    "text_subtle": "#8888A0",
+    "primary":     "#5B52E0",
+    "secondary":   "#22A898",
+    "tertiary":    "#E04040",
+    "info":        "#3388E0",
+    "success":     "#388E3C",
+    "warning":     "#E89020",
+    "danger":      "#D32F2F",
+    "focus":       "#5B52E0"
+  }
+}
