@@ -385,6 +385,9 @@ int main(int argc, char** argv) {
     // Init update queue (must be after lv_init, before UI creation)
     anneal::ui::update_queue_init();
 
+    // Init XML subsystem (must be before theme.apply which registers XML consts)
+    lv_xml_init();
+
     // Load theme
     auto& theme = anneal::ThemeManager::instance();
     std::string theme_path = config_dir + "/themes/dark.json";
@@ -420,9 +423,6 @@ int main(int argc, char** argv) {
     if (cli_port > 0) settings.settings().moonraker_port = cli_port;
 
     // Register XML components and load globals
-    // Must init XML subsystem first (LVGL 9.5 removed XML, helix-xml needs manual init)
-    lv_xml_init();
-
     // LVGL's POSIX filesystem uses 'A:' drive prefix (LV_FS_POSIX_LETTER in lv_conf.h)
     std::string globals_path = "A:" + xml_base + "/globals.xml";
     lv_xml_register_component_from_file(globals_path.c_str());

@@ -283,19 +283,28 @@ void HomePanel::load_planned_profile(const AnnealrProfile& profile,
 
     anneal_temp_graph_set_temp_range(graph_, t_min, t_max);
 
-    // Set point count based on profile duration
+    // Only change point count when no run is active — changing it resets all series
     float total_s = points.back().first;
     if (total_s <= 0) total_s = 600;
-    int point_count = std::max(300, std::min(1200, static_cast<int>(total_s)));
-    anneal_temp_graph_set_point_count(graph_, point_count);
 
-    // Re-add series (point count change clears them)
-    anneal_temp_graph_clear(graph_);
+    if (!state_.is_run_active()) {
+        int point_count = std::max(300, std::min(1200, static_cast<int>(total_s)));
+        anneal_temp_graph_set_point_count(graph_, point_count);
+    }
+
+    // Clear only the planned series, preserve actual temperature data
+    auto* planned_meta = &graph_->series_meta[planned_series_];
+    if (planned_meta->chart_series) {
+        lv_chart_set_all_values(graph_->chart, planned_meta->chart_series,
+                                LV_CHART_POINT_NONE);
+        planned_meta->first_value_received = false;
+    }
 
     // Interpolate planned curve to match point count
-    std::vector<float> temps(point_count);
-    for (int i = 0; i < point_count; ++i) {
-        float t = (static_cast<float>(i) / (point_count - 1)) * total_s;
+    int pc = graph_->point_count;
+    std::vector<float> temps(pc);
+    for (int i = 0; i < pc; ++i) {
+        float t = (static_cast<float>(i) / (pc - 1)) * total_s;
 
         // Find surrounding points
         size_t j = 0;
@@ -312,7 +321,7 @@ void HomePanel::load_planned_profile(const AnnealrProfile& profile,
     }
 
     anneal_temp_graph_set_series_data(graph_, planned_series_,
-                                       temps.data(), point_count);
+                                       temps.data(), pc);
 
     // Set elapsed time range for X-axis
     graph_->elapsed_latest_s = total_s;
