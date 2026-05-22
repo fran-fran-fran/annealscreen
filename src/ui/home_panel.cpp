@@ -14,6 +14,12 @@
 #include <cstdio>
 #include <cstring>
 
+// Forward declaration — defined in main.cpp (global namespace)
+void show_setup_overlay();
+
+// MDI icon font (compiled from assets/fonts/mdi_icons_24.c, C linkage)
+extern "C" { LV_FONT_DECLARE(mdi_icons_24); }
+
 namespace anneal {
 
 // Chart series colors
@@ -99,7 +105,6 @@ lv_obj_t* HomePanel::create(lv_obj_t* parent) {
     // Set MDI icon font on settings button (cog = U+F0493)
     lv_obj_t* settings_icon = lv_obj_find_by_name(panel_, "btn_settings_icon");
     if (settings_icon) {
-        LV_FONT_DECLARE(mdi_icons_24);
         lv_obj_set_style_text_font(settings_icon, &mdi_icons_24, LV_PART_MAIN);
         lv_label_set_text(settings_icon, "\xF3\xB0\x92\x93"); // MDI cog
     }
@@ -374,9 +379,7 @@ void HomePanel::on_cancel_clicked(lv_event_t*) {
 
 void HomePanel::on_settings_clicked(lv_event_t*) {
     spdlog::info("[HomePanel] Opening settings");
-    // show_setup_overlay is defined in main.cpp — declared extern here
-    extern void show_setup_overlay();
-    show_setup_overlay();
+    ::show_setup_overlay();
 }
 
 // ── Chart timer ─────────────────────────────────────────────────────────
