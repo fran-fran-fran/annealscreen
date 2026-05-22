@@ -270,27 +270,33 @@ void AnnealrState::update_from_status(const std::string& status_json) {
         return;
     }
 
-    // Parse on WebSocket thread (no LVGL calls)
-    std::string state_str    = data.value("state", "idle");
-    std::string profile_name = data.value("profile", "");
-    int         stage_idx    = data.value("stage_index", 0);
-    int         stage_cnt    = data.value("stage_count", 0);
-    float       progress_f   = data.value("progress", 0.0f);
-    float       run_elapsed  = data.value("run_elapsed_s", 0.0f);
+    // Moonraker sends PARTIAL updates — only changed fields are present.
+    // Use current values as defaults so a partial update (e.g. only
+    // run_elapsed_s changed) doesn't reset state to "idle".
+    std::string state_str    = data.value("state", std::string(state_buf_));
+    std::string profile_name = data.value("profile", std::string(profile_name_buf_));
+    int         stage_idx    = data.value("stage_index",
+                                   static_cast<int>(lv_subject_get_int(&stage_index_)));
+    int         stage_cnt    = data.value("stage_count",
+                                   static_cast<int>(lv_subject_get_int(&stage_count_)));
+    float       progress_f   = data.value("progress",
+                                   lv_subject_get_int(&progress_) / 100.0f);
+    float       run_elapsed  = data.value("run_elapsed_s",
+                                   static_cast<float>(lv_subject_get_int(&run_elapsed_s_)));
 
-    std::string stage_lbl;
-    float       stage_tgt    = 0;
-    float       seg_elapsed  = 0;
-    float       seg_remaining = 0;
+    std::string stage_lbl    = std::string(stage_label_buf_);
+    float       stage_tgt    = lv_subject_get_int(&stage_target_) / 10.0f;
+    float       seg_elapsed  = static_cast<float>(lv_subject_get_int(&elapsed_s_));
+    float       seg_remaining = static_cast<float>(lv_subject_get_int(&remaining_s_));
 
     if (data.contains("stage") && !data["stage"].is_null()) {
         const auto& stage = data["stage"];
-        stage_lbl     = stage.value("label", "");
-        stage_tgt     = stage.value("target", 0.0f);
-        seg_elapsed   = stage.value("elapsed_s", 0.0f);
-        seg_remaining = stage.value("remaining_s", 0.0f);
+        stage_lbl     = stage.value("label", stage_lbl);
+        stage_tgt     = stage.value("target", stage_tgt);
+        seg_elapsed   = stage.value("elapsed_s", seg_elapsed);
+        seg_remaining = stage.value("remaining_s", seg_remaining);
         if (stage.contains("progress"))
-            progress_f = stage.value("progress", 0.0f);
+            progress_f = stage.value("progress", progress_f);
     }
 
     // Defer to LVGL thread

@@ -219,7 +219,7 @@ void HomePanel::update_button_states() {
     bool is_paused     = state_.is_paused();
     bool can_cancel    = state_.is_run_active();
 
-    spdlog::debug("[HomePanel] Button update: state='{}' start={} pause={} resume={} cancel={}",
+    spdlog::info("[HomePanel] Button update: state='{}' start={} pause={} resume={} cancel={}",
                   state_.current_state_str(), can_start, is_running, is_paused, can_cancel);
 
     lv_subject_set_int(&can_start_,  can_start  ? 1 : 0);

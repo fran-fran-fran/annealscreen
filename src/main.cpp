@@ -182,8 +182,11 @@ static void start_connection(const std::string& host, int port,
     };
 
     g_client->on_status_update = [&state, heater](const nlohmann::json& data) {
+        spdlog::info("[Main] Status update keys: {}", data.dump().substr(0, 300));
+
         // Route annealr status
         if (data.contains("annealr")) {
+            spdlog::info("[Main] annealr data: {}", data["annealr"].dump().substr(0, 300));
             state.update_from_status(data["annealr"].dump());
         }
 
