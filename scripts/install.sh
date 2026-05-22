@@ -334,7 +334,7 @@ configure_moonraker() {
 # Enables one-click updates from Mainsail/Fluidd
 [update_manager annealscreen]
 type: web
-channel: dev
+channel: stable
 repo: ${GITHUB_REPO}
 path: ${INSTALL_DIR}
 MOONRAKER
