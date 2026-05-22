@@ -108,7 +108,7 @@ static void textarea_defocused_cb(lv_event_t*) {
     }
 }
 
-static void show_setup_overlay() {
+void show_setup_overlay() {
     lv_xml_register_event_cb(nullptr, "on_setup_save", on_setup_save);
 
     g_setup_overlay = static_cast<lv_obj_t*>(
@@ -182,11 +182,8 @@ static void start_connection(const std::string& host, int port,
     };
 
     g_client->on_status_update = [&state, heater](const nlohmann::json& data) {
-        spdlog::info("[Main] Status update keys: {}", data.dump().substr(0, 300));
-
         // Route annealr status
         if (data.contains("annealr")) {
-            spdlog::info("[Main] annealr data: {}", data["annealr"].dump().substr(0, 300));
             state.update_from_status(data["annealr"].dump());
         }
 
@@ -200,21 +197,25 @@ static void start_connection(const std::string& host, int port,
                 float elapsed = static_cast<float>(
                     lv_subject_get_int(state.run_elapsed_s_subject()));
 
-                // Update chamber temp + target on LVGL thread
-                anneal::ui::queue_update([&state, temp, target]() {
+                anneal::ui::queue_update([&state, temp, target, elapsed]() {
+                    // Update chamber temp subject + formatted text
                     lv_subject_set_int(state.chamber_temp_subject(),
                                        static_cast<int>(temp * 10));
                     lv_subject_set_int(state.chamber_target_subject(),
                                        static_cast<int>(target * 10));
-
-                    // Format display text: "28.6°C"
                     char buf[32];
                     std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
-                    auto* text_subj = state.chamber_temp_text_subject();
-                    lv_subject_copy_string(text_subj, buf);
+                    lv_subject_copy_string(state.chamber_temp_text_subject(), buf);
+
+                    // Push to chart if run active
+                    auto& home = anneal::HomePanel::instance();
+                    if (state.is_run_active()) {
+                        home.push_temperature(temp, elapsed);
+                    }
+                    home.update_chart_target(target);
                 });
 
-                // Record for chart if run is active
+                // Record for temp history (thread-safe)
                 if (state.is_run_active()) {
                     state.record_temperature(temp, elapsed);
                 }
@@ -390,9 +391,28 @@ int main(int argc, char** argv) {
     theme.load(theme_path);
     theme.apply();
 
-    // Load settings
+    // Load settings from Klipper ecosystem config dir
     auto& settings = anneal::SettingsManager::instance();
-    std::string settings_path = config_dir + "/settings.json";
+    std::string home_dir = getenv("HOME") ? getenv("HOME") : ".";
+    std::string settings_dir = home_dir + "/printer_data/config/annealscreen";
+    std::string settings_path = settings_dir + "/settings.json";
+    std::string template_path = config_dir + "/settings.json.template";
+
+    // Track first run — settings file didn't exist before we created it
+    bool first_run = !fs::exists(settings_path);
+
+    // Create config dir and copy template on first run
+    if (first_run) {
+        try {
+            fs::create_directories(settings_dir);
+            if (fs::exists(template_path)) {
+                fs::copy_file(template_path, settings_path);
+                spdlog::info("First run: created {}", settings_path);
+            }
+        } catch (const fs::filesystem_error& e) {
+            spdlog::warn("Could not create settings: {}", e.what());
+        }
+    }
     settings.load(settings_path);
 
     // Override settings from CLI
@@ -424,6 +444,9 @@ int main(int argc, char** argv) {
     // Connect to Moonraker or show setup
     if (test_mode) {
         spdlog::info("Running in test mode — no Moonraker connection");
+    } else if (first_run) {
+        spdlog::info("First run — showing setup overlay");
+        show_setup_overlay();
     } else if (settings.has_valid_config()) {
         start_connection(settings.settings().moonraker_host,
                          settings.settings().moonraker_port,

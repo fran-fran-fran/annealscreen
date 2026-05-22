@@ -24,6 +24,7 @@ SRCS := \
     src/annealr_state.cpp \
     src/moonraker/moonraker_client.cpp \
     src/ui/home_panel.cpp \
+    src/ui/ui_temp_graph.cpp \
     src/settings_manager.cpp \
     src/theme_manager.cpp \
     src/static_subject_registry.cpp \
