@@ -163,10 +163,11 @@ static void start_connection(const std::string& host, int port,
         spdlog::info("[Main] Moonraker connected, subscribing...");
 
         // Subscribe to annealr status + heater temperature
+        // null = subscribe to all fields for that object
         std::string heater_key = "heater_generic " + heater;
         nlohmann::json objects = {
             {"annealr", nullptr},
-            {heater_key, {{"temperature", "target"}}}
+            {heater_key, nullptr}
         };
         g_client->subscribe(objects);
 
