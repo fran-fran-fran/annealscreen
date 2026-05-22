@@ -118,11 +118,15 @@ lv_obj_t* HomePanel::create(lv_obj_t* parent) {
                 lv_obj_set_size(chart, LV_PCT(100), LV_PCT(100));
             }
 
-            // Add series: planned profile curve + actual temperature
+            // Add series: target setpoint curve + actual temperature
             planned_series_ = anneal_temp_graph_add_series(
-                graph_, "Planned", COLOR_PLANNED);
+                graph_, "Target", COLOR_PLANNED);
             actual_series_ = anneal_temp_graph_add_series(
                 graph_, "Actual", COLOR_ACTUAL);
+
+            // Target series: dashed line + horizontal marker at latest value
+            anneal_temp_graph_set_series_dashed(graph_, planned_series_, true);
+            anneal_temp_graph_set_series_h_marker(graph_, planned_series_, true);
 
             // Configure Y-axis: 50-degree increments
             anneal_temp_graph_set_y_axis(graph_, 50.0f, true);
@@ -258,6 +262,12 @@ void HomePanel::push_temperature(float temp_c, float elapsed_s) {
     if (!graph_ || actual_series_ < 0) return;
     anneal_temp_graph_push_value_with_time(graph_, actual_series_,
                                             temp_c, elapsed_s);
+}
+
+void HomePanel::push_target_setpoint(float target_c, float elapsed_s) {
+    if (!graph_ || planned_series_ < 0 || target_c <= 0) return;
+    anneal_temp_graph_push_value_with_time(graph_, planned_series_,
+                                            target_c, elapsed_s);
 }
 
 void HomePanel::load_planned_profile(const AnnealrProfile& profile,

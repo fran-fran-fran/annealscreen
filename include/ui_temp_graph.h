@@ -66,9 +66,12 @@ struct anneal_series_meta_t {
     lv_color_t color;
     char name[32];
     bool visible;
+    bool dashed;            // draw as dashed line
     bool show_target;
     float target_temp;
+    bool show_h_marker;     // horizontal dashed line at latest value
     bool first_value_received;
+    float latest_value;     // last pushed value (for h_marker)
 };
 
 // ── Graph struct ────────────────────────────────────────────────────────
@@ -143,6 +146,10 @@ void anneal_temp_graph_clear(anneal_temp_graph_t* graph);
 void anneal_temp_graph_set_series_target(anneal_temp_graph_t* graph,
                                           int series_id, float target,
                                           bool show);
+void anneal_temp_graph_set_series_dashed(anneal_temp_graph_t* graph,
+                                          int series_id, bool dashed);
+void anneal_temp_graph_set_series_h_marker(anneal_temp_graph_t* graph,
+                                            int series_id, bool show);
 
 // ── Configuration ───────────────────────────────────────────────────────
 

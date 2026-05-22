@@ -98,6 +98,7 @@ void AnnealrState::init_subjects() {
     lv_subject_init_int(&stage_index_, 0);
     lv_subject_init_int(&stage_count_, 0);
     lv_subject_init_int(&stage_target_, 0);
+    lv_subject_init_int(&stage_rate_, 0);
     lv_subject_init_int(&progress_, 0);
     lv_subject_init_int(&elapsed_s_, 0);
     lv_subject_init_int(&remaining_s_, 0);
@@ -110,6 +111,18 @@ void AnnealrState::init_subjects() {
     lv_subject_init_string(&chamber_temp_text_, chamber_temp_text_buf_, nullptr,
                            sizeof(chamber_temp_text_buf_), "22.0\xC2\xB0""C");
 
+    std::memset(chamber_target_text_buf_, 0, sizeof(chamber_target_text_buf_));
+    lv_subject_init_string(&chamber_target_text_, chamber_target_text_buf_, nullptr,
+                           sizeof(chamber_target_text_buf_), "");
+
+    std::memset(stage_rate_text_buf_, 0, sizeof(stage_rate_text_buf_));
+    lv_subject_init_string(&stage_rate_text_, stage_rate_text_buf_, nullptr,
+                           sizeof(stage_rate_text_buf_), "");
+
+    std::memset(stage_kind_buf_, 0, sizeof(stage_kind_buf_));
+    lv_subject_init_string(&stage_kind_, stage_kind_buf_, nullptr,
+                           sizeof(stage_kind_buf_), "");
+
     // Register globally so XML bind_text/bind_value can find them
     lv_xml_register_subject(nullptr, "annealr_state", &state_);
     lv_xml_register_subject(nullptr, "annealr_profile_name", &profile_name_);
@@ -117,6 +130,8 @@ void AnnealrState::init_subjects() {
     lv_xml_register_subject(nullptr, "annealr_stage_index", &stage_index_);
     lv_xml_register_subject(nullptr, "annealr_stage_count", &stage_count_);
     lv_xml_register_subject(nullptr, "annealr_stage_target", &stage_target_);
+    lv_xml_register_subject(nullptr, "annealr_stage_rate", &stage_rate_);
+    lv_xml_register_subject(nullptr, "annealr_stage_kind", &stage_kind_);
     lv_xml_register_subject(nullptr, "annealr_progress", &progress_);
     lv_xml_register_subject(nullptr, "annealr_elapsed_s", &elapsed_s_);
     lv_xml_register_subject(nullptr, "annealr_remaining_s", &remaining_s_);
@@ -126,6 +141,8 @@ void AnnealrState::init_subjects() {
     lv_xml_register_subject(nullptr, "annealr_chamber_temp", &chamber_temp_);
     lv_xml_register_subject(nullptr, "annealr_chamber_target", &chamber_target_);
     lv_xml_register_subject(nullptr, "annealr_chamber_temp_text", &chamber_temp_text_);
+    lv_xml_register_subject(nullptr, "annealr_chamber_target_text", &chamber_target_text_);
+    lv_xml_register_subject(nullptr, "annealr_stage_rate_text", &stage_rate_text_);
 
     initialized_ = true;
 
@@ -153,6 +170,10 @@ void AnnealrState::deinit_subjects() {
     lv_subject_deinit(&chamber_temp_);
     lv_subject_deinit(&chamber_target_);
     lv_subject_deinit(&chamber_temp_text_);
+    lv_subject_deinit(&chamber_target_text_);
+    lv_subject_deinit(&stage_rate_);
+    lv_subject_deinit(&stage_kind_);
+    lv_subject_deinit(&stage_rate_text_);
 
     initialized_ = false;
 }
@@ -299,14 +320,72 @@ void AnnealrState::update_from_status(const std::string& status_json) {
             progress_f = stage.value("progress", progress_f);
     }
 
+    // Parse rate and kind (may be absent in partial updates)
+    std::string stage_kind_str = std::string(stage_kind_buf_);
+    float stage_rate_val = lv_subject_get_int(&stage_rate_) / 100.0f;
+    bool rate_is_null = (lv_subject_get_int(&stage_rate_) == 0 &&
+                         stage_kind_str == "ramp");
+
+    if (data.contains("stage") && !data["stage"].is_null()) {
+        const auto& stage = data["stage"];
+        if (stage.contains("kind"))
+            stage_kind_str = stage["kind"].get<std::string>();
+        if (stage.contains("rate")) {
+            if (stage["rate"].is_null()) {
+                stage_rate_val = 0;
+                rate_is_null = true;
+            } else {
+                stage_rate_val = stage["rate"].get<float>();
+                rate_is_null = false;
+            }
+        }
+    }
+
     // Defer to LVGL thread
     anneal::ui::queue_update(
         [this, state_str, profile_name, stage_idx, stage_cnt,
          stage_lbl, stage_tgt, progress_f, seg_elapsed,
-         seg_remaining, run_elapsed]() {
+         seg_remaining, run_elapsed, stage_kind_str, stage_rate_val,
+         rate_is_null]() {
             apply_status(state_str, profile_name, stage_idx, stage_cnt,
                          stage_lbl, stage_tgt, progress_f,
                          seg_elapsed, seg_remaining, run_elapsed);
+
+            // Update kind
+            std::strncpy(stage_kind_buf_, stage_kind_str.c_str(),
+                         sizeof(stage_kind_buf_) - 1);
+            stage_kind_buf_[sizeof(stage_kind_buf_) - 1] = '\0';
+            lv_subject_copy_string(&stage_kind_, stage_kind_buf_);
+
+            // Update rate (stored as centi-degrees/min for int subject)
+            lv_subject_set_int(&stage_rate_,
+                               static_cast<int>(stage_rate_val * 100));
+
+            // Format rate text
+            if (stage_kind_str == "soak") {
+                std::strncpy(stage_rate_text_buf_, "",
+                             sizeof(stage_rate_text_buf_));
+            } else if (rate_is_null) {
+                std::strncpy(stage_rate_text_buf_, "Rate: unbound",
+                             sizeof(stage_rate_text_buf_));
+            } else {
+                std::snprintf(stage_rate_text_buf_, sizeof(stage_rate_text_buf_),
+                              "Rate: %.1f \xC2\xB0""C/min", stage_rate_val);
+            }
+            lv_subject_copy_string(&stage_rate_text_, stage_rate_text_buf_);
+
+            // Format chamber target text
+            float target_c = lv_subject_get_int(&chamber_target_) / 10.0f;
+            if (target_c > 0) {
+                std::snprintf(chamber_target_text_buf_,
+                              sizeof(chamber_target_text_buf_),
+                              "%.1f\xC2\xB0""C", target_c);
+            } else {
+                std::strncpy(chamber_target_text_buf_, "",
+                             sizeof(chamber_target_text_buf_));
+            }
+            lv_subject_copy_string(&chamber_target_text_,
+                                   chamber_target_text_buf_);
         });
 }
 

@@ -106,37 +106,53 @@
       <lv_obj name="info_bar"
               width="100%" height="content"
               flex_flow="row" style_pad_all="6" style_pad_gap="14"
-              style_flex_main_place="space_evenly" style_flex_cross_place="center"
+              style_flex_main_place="space_evenly" style_flex_cross_place="start"
               style_bg_color="#card_bg" style_bg_opa="255"
               style_radius="8" style_border_width="1"
               style_border_color="#border" style_border_opa="80"
               scrollable="false">
 
+        <!-- Chamber: Current + Target stacked -->
         <lv_obj width="content" height="content"
-                flex_flow="row" style_pad_gap="4"
-                style_flex_cross_place="center" scrollable="false"
-                style_bg_opa="0" style_border_width="0">
-          <lv_label text="Chamber:" style_text_color="#text_muted"/>
-          <lv_label name="chamber_temp_label"
-                    bind_text="annealr_chamber_temp_text"
-                    style_text_color="#text"/>
+                flex_flow="column" style_pad_gap="2"
+                scrollable="false" style_bg_opa="0" style_border_width="0">
+          <lv_label text="Chamber" style_text_color="#text_muted"/>
+          <lv_obj width="content" height="content"
+                  flex_flow="row" style_pad_gap="4"
+                  scrollable="false" style_bg_opa="0" style_border_width="0">
+            <lv_label text="Current:" style_text_color="#FF7326"/>
+            <lv_label name="chamber_temp_label"
+                      bind_text="annealr_chamber_temp_text"
+                      style_text_color="#FF7326"/>
+          </lv_obj>
+          <lv_obj width="content" height="content"
+                  flex_flow="row" style_pad_gap="4"
+                  scrollable="false" style_bg_opa="0" style_border_width="0">
+            <lv_label text="Target:" style_text_color="#66B2FF"/>
+            <lv_label name="chamber_target_label"
+                      bind_text="annealr_chamber_target_text"
+                      style_text_color="#66B2FF"/>
+          </lv_obj>
         </lv_obj>
 
+        <!-- Stage: label + rate stacked -->
         <lv_obj width="content" height="content"
-                flex_flow="row" style_pad_gap="4"
-                style_flex_cross_place="center" scrollable="false"
-                style_bg_opa="0" style_border_width="0">
-          <lv_label text="Stage:" style_text_color="#text_muted"/>
+                flex_flow="column" style_pad_gap="2"
+                scrollable="false" style_bg_opa="0" style_border_width="0">
+          <lv_label text="Stage" style_text_color="#text_muted"/>
           <lv_label name="stage_label"
                     bind_text="annealr_stage_label"
                     style_text_color="#text"/>
+          <lv_label name="stage_rate_label"
+                    bind_text="annealr_stage_rate_text"
+                    style_text_color="#text_muted"/>
         </lv_obj>
 
+        <!-- Profile -->
         <lv_obj width="content" height="content"
-                flex_flow="row" style_pad_gap="4"
-                style_flex_cross_place="center" scrollable="false"
-                style_bg_opa="0" style_border_width="0">
-          <lv_label text="Profile:" style_text_color="#text_muted"/>
+                flex_flow="column" style_pad_gap="2"
+                scrollable="false" style_bg_opa="0" style_border_width="0">
+          <lv_label text="Profile" style_text_color="#text_muted"/>
           <lv_label name="profile_label"
                     bind_text="annealr_profile_name"
                     style_text_color="#text"/>

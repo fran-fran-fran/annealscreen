@@ -69,6 +69,8 @@ class AnnealrState {
     lv_subject_t* stage_index_subject()    { return &stage_index_; }
     lv_subject_t* stage_count_subject()    { return &stage_count_; }
     lv_subject_t* stage_target_subject()   { return &stage_target_; }
+    lv_subject_t* stage_rate_subject()     { return &stage_rate_; }
+    lv_subject_t* stage_kind_subject()     { return &stage_kind_; }
     lv_subject_t* progress_subject()       { return &progress_; }
     lv_subject_t* elapsed_s_subject()      { return &elapsed_s_; }
     lv_subject_t* remaining_s_subject()    { return &remaining_s_; }
@@ -78,6 +80,8 @@ class AnnealrState {
     lv_subject_t* chamber_temp_subject()   { return &chamber_temp_; }
     lv_subject_t* chamber_target_subject() { return &chamber_target_; }
     lv_subject_t* chamber_temp_text_subject() { return &chamber_temp_text_; }
+    lv_subject_t* chamber_target_text_subject() { return &chamber_target_text_; }
+    lv_subject_t* stage_rate_text_subject() { return &stage_rate_text_; }
 
     // ── Profile access ──────────────────────────────────────────────
 
@@ -124,6 +128,8 @@ class AnnealrState {
     lv_subject_t stage_index_{};
     lv_subject_t stage_count_{};
     lv_subject_t stage_target_{};
+    lv_subject_t stage_rate_{};       // centidegrees/min (int), 0 = unbound
+    lv_subject_t stage_kind_{};       // string: "ramp" or "soak"
     lv_subject_t progress_{};
     lv_subject_t elapsed_s_{};
     lv_subject_t remaining_s_{};
@@ -133,6 +139,8 @@ class AnnealrState {
     lv_subject_t chamber_temp_{};     // centidegrees (int) - for chart
     lv_subject_t chamber_target_{};   // centidegrees (int)
     lv_subject_t chamber_temp_text_{}; // formatted "28.6°C" for display
+    lv_subject_t chamber_target_text_{}; // formatted "140.0°C" for display
+    lv_subject_t stage_rate_text_{};  // formatted "2.0 °C/min" or "unbound"
 
     // Static buffers for string subjects
     char state_buf_[32]        = "idle";
@@ -140,6 +148,9 @@ class AnnealrState {
     char stage_label_buf_[128] = "";
     char status_text_buf_[512] = "";
     char chamber_temp_text_buf_[32] = "";
+    char chamber_target_text_buf_[32] = "";
+    char stage_rate_text_buf_[32] = "";
+    char stage_kind_buf_[16] = "";
 
     // Profile storage
     std::vector<AnnealrProfile> profiles_;

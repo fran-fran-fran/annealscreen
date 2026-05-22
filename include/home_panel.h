@@ -32,6 +32,7 @@ class HomePanel {
 
     // Chart management — called from main.cpp status handler
     void push_temperature(float temp_c, float elapsed_s);
+    void push_target_setpoint(float target_c, float elapsed_s);
     void load_planned_profile(const AnnealrProfile& profile, float start_temp);
     void clear_chart();
     void update_chart_target(float target_c);

@@ -253,6 +253,75 @@ static void draw_target_lines_cb(lv_event_t* e) {
     }
 }
 
+// Horizontal marker line — dashed line at latest series value extending to right edge
+static void draw_h_marker_cb(lv_event_t* e) {
+    lv_obj_t* chart = lv_event_get_target_obj(e);
+    auto* graph = static_cast<anneal_temp_graph_t*>(lv_event_get_user_data(e));
+    if (!graph || !graph->chart) return;
+
+    lv_layer_t* layer = lv_event_get_layer(e);
+    if (!layer) return;
+
+    lv_area_t coords;
+    lv_obj_get_coords(chart, &coords);
+    int32_t pad_left   = lv_obj_get_style_pad_left(chart, LV_PART_MAIN);
+    int32_t pad_right  = lv_obj_get_style_pad_right(chart, LV_PART_MAIN);
+    int32_t pad_top    = lv_obj_get_style_pad_top(chart, LV_PART_MAIN);
+    int32_t pad_bottom = lv_obj_get_style_pad_bottom(chart, LV_PART_MAIN);
+
+    int32_t cx1 = coords.x1 + pad_left;
+    int32_t cx2 = coords.x2 - pad_right;
+    int32_t cy1 = coords.y1 + pad_top;
+    int32_t cy2 = coords.y2 - pad_bottom;
+    int32_t ch = cy2 - cy1;
+    if (ch <= 0) return;
+
+    for (int i = 0; i < ANNEAL_GRAPH_MAX_SERIES; ++i) {
+        auto* meta = &graph->series_meta[i];
+        if (!meta->chart_series || !meta->visible || !meta->show_h_marker)
+            continue;
+        if (!meta->first_value_received) continue;
+
+        int32_t content_y = ch - lv_map(
+            static_cast<int32_t>(meta->latest_value * ANNEAL_TEMP_SCALE),
+            static_cast<int32_t>(graph->min_temp * ANNEAL_TEMP_SCALE),
+            static_cast<int32_t>(graph->max_temp * ANNEAL_TEMP_SCALE),
+            0, ch);
+        int32_t abs_y = cy1 + content_y;
+        if (abs_y < cy1 || abs_y > cy2) continue;
+
+        // Find X position of latest data point
+        int32_t cw = cx2 - cx1;
+        int32_t marker_x = cx2; // default to right edge
+        if (graph->visible_point_count > 0 && graph->visible_point_count < graph->point_count) {
+            marker_x = cx1 + (cw * graph->visible_point_count) / graph->point_count;
+        }
+
+        // Marker dot
+        lv_draw_rect_dsc_t dot_dsc;
+        lv_draw_rect_dsc_init(&dot_dsc);
+        dot_dsc.bg_color = meta->color;
+        dot_dsc.bg_opa = LV_OPA_COVER;
+        dot_dsc.radius = LV_RADIUS_CIRCLE;
+        lv_area_t dot_area = {marker_x - 4, abs_y - 4, marker_x + 4, abs_y + 4};
+        lv_draw_rect(layer, &dot_dsc, &dot_area);
+
+        // Horizontal dashed line from dot to right edge
+        if (marker_x < cx2 - 5) {
+            lv_draw_line_dsc_t line_dsc;
+            lv_draw_line_dsc_init(&line_dsc);
+            line_dsc.color = meta->color;
+            line_dsc.width = 1;
+            line_dsc.dash_width = 4;
+            line_dsc.dash_gap = 3;
+            line_dsc.opa = LV_OPA_40;
+            line_dsc.p1 = {marker_x, abs_y};
+            line_dsc.p2 = {cx2, abs_y};
+            lv_draw_line(layer, &line_dsc);
+        }
+    }
+}
+
 // Legend chips (color swatch + name) in upper-left corner
 static void draw_legend_cb(lv_event_t* e) {
     lv_obj_t* chart = lv_event_get_target_obj(e);
@@ -388,6 +457,7 @@ anneal_temp_graph_t* anneal_temp_graph_create(lv_obj_t* parent) {
     lv_obj_add_event_cb(graph->chart, draw_x_axis_labels_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_y_axis_labels_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_target_lines_cb, LV_EVENT_DRAW_POST, graph);
+    lv_obj_add_event_cb(graph->chart, draw_h_marker_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_legend_cb, LV_EVENT_DRAW_POST, graph);
 
     // Clean up graph pointer when chart widget is deleted
@@ -411,6 +481,7 @@ void anneal_temp_graph_destroy(anneal_temp_graph_t* graph) {
         lv_obj_remove_event_cb(graph->chart, draw_x_axis_labels_cb);
         lv_obj_remove_event_cb(graph->chart, draw_y_axis_labels_cb);
         lv_obj_remove_event_cb(graph->chart, draw_target_lines_cb);
+        lv_obj_remove_event_cb(graph->chart, draw_h_marker_cb);
         lv_obj_remove_event_cb(graph->chart, draw_legend_cb);
         lv_obj_remove_event_cb(graph->chart, chart_delete_cb);
         lv_obj_delete(graph->chart);
@@ -450,9 +521,12 @@ int anneal_temp_graph_add_series(anneal_temp_graph_t* graph,
     std::strncpy(meta->name, name, sizeof(meta->name) - 1);
     meta->name[sizeof(meta->name) - 1] = '\0';
     meta->visible = true;
+    meta->dashed = false;
     meta->show_target = false;
     meta->target_temp = 0;
+    meta->show_h_marker = false;
     meta->first_value_received = false;
+    meta->latest_value = 0;
 
     graph->series_count++;
     spdlog::debug("[TempGraph] Added series {} '{}' (slot {})", meta->id, name, slot);
@@ -489,6 +563,7 @@ void anneal_temp_graph_push_value(anneal_temp_graph_t* graph,
                                 static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
     }
 
+    meta->latest_value = temp;
     lv_chart_set_next_value(graph->chart, meta->chart_series,
                             static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
 }
@@ -511,6 +586,7 @@ void anneal_temp_graph_push_value_with_time(anneal_temp_graph_t* graph,
     graph->elapsed_latest_s = elapsed_s;
     graph->visible_point_count++;
 
+    meta->latest_value = temp;
     lv_chart_set_next_value(graph->chart, meta->chart_series,
                             static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
 }
@@ -566,6 +642,27 @@ void anneal_temp_graph_set_series_target(anneal_temp_graph_t* graph,
     if (!meta) return;
     meta->target_temp = target;
     meta->show_target = show;
+    if (graph->chart) lv_obj_invalidate(graph->chart);
+}
+
+void anneal_temp_graph_set_series_dashed(anneal_temp_graph_t* graph,
+                                          int series_id, bool dashed) {
+    auto* meta = find_series(graph, series_id);
+    if (!meta) return;
+    meta->dashed = dashed;
+    // Apply dashed style via line dash on the series
+    // Note: lv_chart doesn't natively support per-series dashing,
+    // but we can set the style on the chart ITEMS part when only
+    // one series is dashed. For multiple, would need custom draw.
+    // For now, visual differentiation comes from opacity + legend label.
+    if (graph->chart) lv_obj_invalidate(graph->chart);
+}
+
+void anneal_temp_graph_set_series_h_marker(anneal_temp_graph_t* graph,
+                                            int series_id, bool show) {
+    auto* meta = find_series(graph, series_id);
+    if (!meta) return;
+    meta->show_h_marker = show;
     if (graph->chart) lv_obj_invalidate(graph->chart);
 }
 

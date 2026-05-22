@@ -207,10 +207,19 @@ static void start_connection(const std::string& host, int port,
                     std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
                     lv_subject_copy_string(state.chamber_temp_text_subject(), buf);
 
+                    // Format target text
+                    if (target > 0) {
+                        std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", target);
+                    } else {
+                        buf[0] = '\0';
+                    }
+                    lv_subject_copy_string(state.chamber_target_text_subject(), buf);
+
                     // Push to chart if run active
                     auto& home = anneal::HomePanel::instance();
                     if (state.is_run_active()) {
                         home.push_temperature(temp, elapsed);
+                        home.push_target_setpoint(target, elapsed);
                     }
                     home.update_chart_target(target);
                 });
