@@ -79,7 +79,7 @@ class AnnealrState {
     lv_subject_t* profiles_version_subject() { return &profiles_version_; }
     lv_subject_t* chamber_temp_subject()   { return &chamber_temp_; }
     lv_subject_t* chamber_target_subject() { return &chamber_target_; }
-    lv_subject_t* chamber_temp_text_subject() { return &chamber_temp_text_; }
+    lv_subject_t* chamber_current_text_subject() { return &chamber_current_text_; }
     lv_subject_t* chamber_target_text_subject() { return &chamber_target_text_; }
     lv_subject_t* stage_rate_text_subject() { return &stage_rate_text_; }
 
@@ -138,8 +138,8 @@ class AnnealrState {
     lv_subject_t profiles_version_{};
     lv_subject_t chamber_temp_{};     // centidegrees (int) - for chart
     lv_subject_t chamber_target_{};   // centidegrees (int)
-    lv_subject_t chamber_temp_text_{}; // formatted "28.6°C" for display
-    lv_subject_t chamber_target_text_{}; // formatted "140.0°C" for display
+    lv_subject_t chamber_current_text_{};  // "Current: 28.6°C" for display
+    lv_subject_t chamber_target_text_{};   // "Target: 140.0°C" for display
     lv_subject_t stage_rate_text_{};  // formatted "2.0 °C/min" or "unbound"
 
     // Static buffers for string subjects
@@ -147,8 +147,8 @@ class AnnealrState {
     char profile_name_buf_[64] = "";
     char stage_label_buf_[128] = "";
     char status_text_buf_[512] = "";
-    char chamber_temp_text_buf_[32] = "";
-    char chamber_target_text_buf_[32] = "";
+    char chamber_current_text_buf_[40] = "";
+    char chamber_target_text_buf_[40] = "";
     char stage_rate_text_buf_[32] = "";
     char stage_kind_buf_[16] = "";
 

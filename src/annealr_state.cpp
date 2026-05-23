@@ -107,9 +107,9 @@ void AnnealrState::init_subjects() {
     lv_subject_init_int(&chamber_temp_, 220);   // 22.0°C default
     lv_subject_init_int(&chamber_target_, 0);
 
-    std::strncpy(chamber_temp_text_buf_, "22.0\xC2\xB0""C", sizeof(chamber_temp_text_buf_));
-    lv_subject_init_string(&chamber_temp_text_, chamber_temp_text_buf_, nullptr,
-                           sizeof(chamber_temp_text_buf_), "22.0\xC2\xB0""C");
+    std::strncpy(chamber_current_text_buf_, "Current: 22.0\xC2\xB0""C", sizeof(chamber_current_text_buf_));
+    lv_subject_init_string(&chamber_current_text_, chamber_current_text_buf_, nullptr,
+                           sizeof(chamber_current_text_buf_), "Current: 22.0\xC2\xB0""C");
 
     std::memset(chamber_target_text_buf_, 0, sizeof(chamber_target_text_buf_));
     lv_subject_init_string(&chamber_target_text_, chamber_target_text_buf_, nullptr,
@@ -140,7 +140,7 @@ void AnnealrState::init_subjects() {
     lv_xml_register_subject(nullptr, "annealr_profiles_version", &profiles_version_);
     lv_xml_register_subject(nullptr, "annealr_chamber_temp", &chamber_temp_);
     lv_xml_register_subject(nullptr, "annealr_chamber_target", &chamber_target_);
-    lv_xml_register_subject(nullptr, "annealr_chamber_temp_text", &chamber_temp_text_);
+    lv_xml_register_subject(nullptr, "annealr_chamber_current_text", &chamber_current_text_);
     lv_xml_register_subject(nullptr, "annealr_chamber_target_text", &chamber_target_text_);
     lv_xml_register_subject(nullptr, "annealr_stage_rate_text", &stage_rate_text_);
 
@@ -169,7 +169,7 @@ void AnnealrState::deinit_subjects() {
     lv_subject_deinit(&profiles_version_);
     lv_subject_deinit(&chamber_temp_);
     lv_subject_deinit(&chamber_target_);
-    lv_subject_deinit(&chamber_temp_text_);
+    lv_subject_deinit(&chamber_current_text_);
     lv_subject_deinit(&chamber_target_text_);
     lv_subject_deinit(&stage_rate_);
     lv_subject_deinit(&stage_kind_);
@@ -376,14 +376,9 @@ void AnnealrState::update_from_status(const std::string& status_json) {
 
             // Format chamber target text
             float target_c = lv_subject_get_int(&chamber_target_) / 10.0f;
-            if (target_c > 0) {
-                std::snprintf(chamber_target_text_buf_,
-                              sizeof(chamber_target_text_buf_),
-                              "%.1f\xC2\xB0""C", target_c);
-            } else {
-                std::strncpy(chamber_target_text_buf_, "",
-                             sizeof(chamber_target_text_buf_));
-            }
+            std::snprintf(chamber_target_text_buf_,
+                          sizeof(chamber_target_text_buf_),
+                          "Target: %.1f\xC2\xB0""C", target_c);
             lv_subject_copy_string(&chamber_target_text_,
                                    chamber_target_text_buf_);
         });
@@ -482,10 +477,10 @@ void AnnealrState::record_temperature(float temp_c, float run_elapsed_s) {
     anneal::ui::queue_update([this, centi, temp_c]() {
         lv_subject_set_int(&chamber_temp_, centi);
 
-        // Format display string: "28.6°C"  (°= UTF-8 0xC2 0xB0)
-        std::snprintf(chamber_temp_text_buf_, sizeof(chamber_temp_text_buf_),
-                      "%.1f\xC2\xB0""C", temp_c);
-        lv_subject_copy_string(&chamber_temp_text_, chamber_temp_text_buf_);
+        // Format display string: "Current: 28.6°C"  (°= UTF-8 0xC2 0xB0)
+        std::snprintf(chamber_current_text_buf_, sizeof(chamber_current_text_buf_),
+                      "Current: %.1f\xC2\xB0""C", temp_c);
+        lv_subject_copy_string(&chamber_current_text_, chamber_current_text_buf_);
     });
 
     // Store history (thread-safe)

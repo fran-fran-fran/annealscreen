@@ -212,15 +212,11 @@ static void start_connection(const std::string& host, int port,
                                        static_cast<int>(temp * 10));
                     lv_subject_set_int(state.chamber_target_subject(),
                                        static_cast<int>(target * 10));
-                    char buf[32];
-                    std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
-                    lv_subject_copy_string(state.chamber_temp_text_subject(), buf);
+                    char buf[64];
+                    std::snprintf(buf, sizeof(buf), "Current: %.1f\xC2\xB0""C", temp);
+                    lv_subject_copy_string(state.chamber_current_text_subject(), buf);
 
-                    if (target > 0) {
-                        std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", target);
-                    } else {
-                        buf[0] = '\0';
-                    }
+                    std::snprintf(buf, sizeof(buf), "Target: %.1f\xC2\xB0""C", target);
                     lv_subject_copy_string(state.chamber_target_text_subject(), buf);
 
                     auto& home = anneal::HomePanel::instance();
