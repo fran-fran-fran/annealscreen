@@ -10,25 +10,29 @@
     <!-- Setup card -->
     <lv_obj name="setup_card"
             width="70%" height="content"
-            flex_flow="column" style_pad_all="#space_xl" style_pad_gap="#space_md"
+            flex_flow="column"
+            style_bg_color="#elevated_bg" style_bg_opa="255"
+            style_border_color="#border" style_border_width="1" style_border_opa="80"
+            style_pad_all="#space_xl" style_pad_gap="#space_md"
             style_max_width="500" style_radius="#border_radius">
 
-      <lv_label text="AnnealScreen Setup" width="100%" style_text_align="center"/>
+      <lv_label text="AnnealScreen Setup" width="100%" style_text_align="center"
+                style_text_color="#text"/>
 
       <!-- Moonraker host -->
-      <lv_label text="Moonraker Host"/>
+      <lv_label text="Moonraker Host" style_text_color="#text"/>
       <lv_textarea name="setup_host"
                    width="100%" placeholder_text="e.g. 192.168.1.100 or localhost"
                    one_line="true"/>
 
       <!-- Moonraker port -->
-      <lv_label text="Moonraker Port"/>
+      <lv_label text="Moonraker Port" style_text_color="#text"/>
       <lv_textarea name="setup_port"
                    width="100%" placeholder_text="7125"
                    one_line="true" accepted_chars="0123456789"/>
 
       <!-- Heater name -->
-      <lv_label text="Heater Name"/>
+      <lv_label text="Heater Name" style_text_color="#text"/>
       <lv_textarea name="setup_heater"
                    width="100%" placeholder_text="e.g. annealer"
                    one_line="true"/>
@@ -37,8 +41,9 @@
       <lv_obj width="100%" height="content"
               flex_flow="row" style_flex_main_place="end" style_pad_gap="#space_md"
               scrollable="false">
-        <lv_button name="btn_setup_save">
-          <lv_label text="Connect"/>
+        <lv_button name="btn_setup_save"
+                   style_bg_color="#primary" style_bg_opa="255" style_radius="6">
+          <lv_label text="Connect" style_text_color="#text"/>
           <event_cb trigger="clicked" callback="on_setup_save"/>
         </lv_button>
       </lv_obj>

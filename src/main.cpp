@@ -151,7 +151,6 @@ void show_setup_overlay() {
 
 static void start_connection(const std::string& host, int port,
                               const std::string& heater) {
-    auto& state = anneal::AnnealrState::instance();
     auto& home  = anneal::HomePanel::instance();
 
     if (!g_client) {
@@ -159,11 +158,10 @@ static void start_connection(const std::string& host, int port,
         home.set_client(g_client);
     }
 
-    g_client->on_connected = [&state, heater]() {
+    g_client->on_connected = [heater]() {
         spdlog::info("[Main] Moonraker connected, subscribing...");
 
         // Subscribe to annealr status + heater temperature
-        // null = subscribe to all fields for that object
         std::string heater_key = "heater_generic " + heater;
         nlohmann::json objects = {
             {"annealr", nullptr},
@@ -171,9 +169,13 @@ static void start_connection(const std::string& host, int port,
         };
         g_client->subscribe(objects);
 
-        // Query config for profiles
-        g_client->query_config([&state](const nlohmann::json& config) {
-            state.load_profiles_from_config(config.dump());
+        // Query config for profiles — defer to main thread so
+        // load_profiles_from_config() runs lv_subject_set_int() safely.
+        g_client->query_config([](const nlohmann::json& config) {
+            auto config_json = config.dump();
+            anneal::ui::queue_update([config_json]() {
+                AnnealrState::instance().load_profiles_from_config(config_json);
+            });
         });
     };
 
@@ -181,10 +183,10 @@ static void start_connection(const std::string& host, int port,
         spdlog::warn("[Main] Moonraker disconnected");
     };
 
-    g_client->on_status_update = [&state, heater](const nlohmann::json& data) {
+    g_client->on_status_update = [heater](const nlohmann::json& data) {
         // Route annealr status
         if (data.contains("annealr")) {
-            state.update_from_status(data["annealr"].dump());
+            AnnealrState::instance().update_from_status(data["annealr"].dump());
         }
 
         // Route heater temperature
@@ -194,11 +196,18 @@ static void start_connection(const std::string& host, int port,
             if (h.contains("temperature")) {
                 float temp = h["temperature"].get<float>();
                 float target = h.value("target", 0.0f);
-                float elapsed = static_cast<float>(
-                    lv_subject_get_int(state.run_elapsed_s_subject()));
 
-                anneal::ui::queue_update([&state, temp, target, elapsed]() {
-                    // Update chamber temp subject + formatted text
+                // Defer ALL LVGL access + state reads to main thread.
+                // The previous lambda captured &state (dangling after
+                // start_connection returns) and read is_run_active() on the
+                // background thread (data race on state_buf_). Fixed: use
+                // AnnealrState::instance() and do everything inside
+                // queue_update where run_elapsed_s_subject() is also safe.
+                anneal::ui::queue_update([temp, target]() {
+                    auto& state = AnnealrState::instance();
+                    float elapsed = static_cast<float>(
+                        lv_subject_get_int(state.run_elapsed_s_subject()));
+
                     lv_subject_set_int(state.chamber_temp_subject(),
                                        static_cast<int>(temp * 10));
                     lv_subject_set_int(state.chamber_target_subject(),
@@ -207,7 +216,6 @@ static void start_connection(const std::string& host, int port,
                     std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", temp);
                     lv_subject_copy_string(state.chamber_temp_text_subject(), buf);
 
-                    // Format target text
                     if (target > 0) {
                         std::snprintf(buf, sizeof(buf), "%.1f\xC2\xB0""C", target);
                     } else {
@@ -215,19 +223,17 @@ static void start_connection(const std::string& host, int port,
                     }
                     lv_subject_copy_string(state.chamber_target_text_subject(), buf);
 
-                    // Push to chart if run active
                     auto& home = anneal::HomePanel::instance();
                     if (state.is_run_active()) {
                         home.push_temperature(temp, elapsed);
                         home.push_target_setpoint(target, elapsed);
                     }
                     home.update_chart_target(target);
-                });
 
-                // Record for temp history (thread-safe)
-                if (state.is_run_active()) {
-                    state.record_temperature(temp, elapsed);
-                }
+                    if (state.is_run_active()) {
+                        state.record_temperature(temp, elapsed);
+                    }
+                });
             }
         }
     };
@@ -478,18 +484,16 @@ int main(int argc, char** argv) {
 
     if (g_client) {
         g_client->disconnect();
+    }
+    // Drain update queue before freeing client — queued callbacks in
+    // MoonrakerClient::on_open/on_close capture `this` and must execute
+    // while the client is still alive.
+    anneal::ui::update_queue_shutdown();
+    if (g_client) {
         delete g_client;
         g_client = nullptr;
     }
 
-    // Shutdown order (matches HelixScreen):
-    // 1. Drain update queue (flush pending callbacks while panels live)
-    // 2. Destroy panels (reverse registration order)
-    // 3. Deinit subjects (disconnect observers before LVGL teardown)
-    // 4. Invalidate all observer guards
-    // 5. lv_deinit (LVGL cleanup)
-    // 6. Uninstall crash handler
-    anneal::ui::update_queue_shutdown();
     StaticPanelRegistry::instance().destroy_all();
     StaticSubjectRegistry::instance().deinit_all();
     ObserverGuard::invalidate_all();

@@ -16,6 +16,8 @@
     "success":     "#4CAF50",
     "warning":     "#FFA726",
     "danger":      "#EF5350",
-    "focus":       "#6C63FF"
+    "focus":       "#6C63FF",
+    "chart_actual":  "#FF7326",
+    "chart_planned": "#66B2FF"
   }
 }

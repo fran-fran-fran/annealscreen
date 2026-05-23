@@ -5,14 +5,17 @@
 #   docker build -t annealscreen-pi -f docker/Dockerfile.pi .
 #   docker run --rm -v $(pwd):/src -w /src annealscreen-pi make ANNEAL_TARGET=pi
 
-FROM ubuntu:24.04
+FROM debian:12
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    crossbuild-essential-arm64 \
+RUN apt-get update && apt-get install -y \
     git \
-    pkg-config \
+    make \
+    cmake \
+    g++ \
+    gcc \
+    crossbuild-essential-arm64 \
+    ca-certificates \
+    zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Cross-compilation defaults

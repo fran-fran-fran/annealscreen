@@ -5,25 +5,25 @@
 <component>
   <view name="home_panel"
         extends="lv_obj" width="100%" height="100%"
-        style_pad_all="10" style_pad_gap="10"
+        style_pad_all="#space_md" style_pad_gap="#space_md"
         flex_flow="row" scrollable="false"
         style_bg_color="#screen_bg" style_bg_opa="255">
 
     <!-- ═══ Left sidebar ═══ -->
     <lv_obj name="sidebar"
             width="30%" height="100%"
-            flex_flow="column" style_pad_all="0" style_pad_gap="6"
+            flex_flow="column" style_pad_all="0" style_pad_gap="#space_sm"
             scrollable="false" style_bg_opa="0" style_border_width="0">
 
       <!-- Toolbar row: up to 4 square icon buttons -->
       <lv_obj name="toolbar"
               width="100%" height="content"
-              flex_flow="row" style_pad_all="0" style_pad_gap="6"
+              flex_flow="row" style_pad_all="0" style_pad_gap="#space_sm"
               style_flex_cross_place="center"
               scrollable="false" style_bg_opa="0" style_border_width="0">
 
         <lv_label text="Profiles" style_flex_grow="1"
-                  style_text_color="#text" style_pad_left="6"/>
+                  style_text_color="#text" style_pad_left="#space_sm"/>
 
         <!-- Settings button (cog icon) -->
         <lv_button name="btn_settings"
@@ -39,25 +39,25 @@
       <!-- Profile list: scrollable, flex-grow fills space -->
       <lv_obj name="annealr_profile_list"
               width="100%" style_flex_grow="1"
-              flex_flow="column" style_pad_all="4" style_pad_gap="4"
+              flex_flow="column" style_pad_all="#space_xs" style_pad_gap="#space_xs"
               style_bg_color="#card_bg" style_bg_opa="255"
-              style_radius="8" style_border_width="1"
+              style_radius="#border_radius" style_border_width="1"
               style_border_color="#border" style_border_opa="80"/>
 
       <!-- Status text -->
       <lv_label name="status_label"
                 width="100%" bind_text="annealr_status_text"
-                style_text_color="#text_muted" style_pad_all="6"/>
+                style_text_color="#text_muted" style_pad_all="#space_sm"/>
 
       <!-- Control buttons -->
       <lv_obj name="button_row"
               width="100%" height="content"
-              flex_flow="column" style_pad_all="0" style_pad_gap="4"
+              flex_flow="column" style_pad_all="0" style_pad_gap="#space_xs"
               scrollable="false" style_bg_opa="0" style_border_width="0">
 
         <lv_button name="btn_start" width="100%"
                    style_bg_color="#primary" style_bg_opa="255"
-                   style_radius="6" style_min_height="42">
+                   style_radius="6" style_min_height="#button_height">
           <lv_label text="Start" style_text_color="#text"/>
           <bind_flag_if_eq subject="annealr_can_start" flag="hidden" ref_value="0"/>
           <event_cb trigger="clicked" callback="on_annealr_start"/>
@@ -65,7 +65,7 @@
 
         <lv_button name="btn_pause" width="100%"
                    style_bg_color="#primary" style_bg_opa="255"
-                   style_radius="6" style_min_height="42">
+                   style_radius="6" style_min_height="#button_height">
           <lv_label text="Pause" style_text_color="#text"/>
           <bind_flag_if_eq subject="annealr_can_pause" flag="hidden" ref_value="0"/>
           <event_cb trigger="clicked" callback="on_annealr_pause"/>
@@ -73,7 +73,7 @@
 
         <lv_button name="btn_resume" width="100%"
                    style_bg_color="#primary" style_bg_opa="255"
-                   style_radius="6" style_min_height="42">
+                   style_radius="6" style_min_height="#button_height">
           <lv_label text="Resume" style_text_color="#text"/>
           <bind_flag_if_eq subject="annealr_can_resume" flag="hidden" ref_value="0"/>
           <event_cb trigger="clicked" callback="on_annealr_resume"/>
@@ -81,7 +81,7 @@
 
         <lv_button name="btn_cancel" width="100%"
                    style_bg_color="#danger" style_bg_opa="255"
-                   style_radius="6" style_min_height="42">
+                   style_radius="6" style_min_height="#button_height">
           <lv_label text="Cancel" style_text_color="#text"/>
           <bind_flag_if_eq subject="annealr_can_cancel" flag="hidden" ref_value="0"/>
           <event_cb trigger="clicked" callback="on_annealr_cancel"/>
@@ -92,52 +92,52 @@
     <!-- ═══ Right area: chart + info bar ═══ -->
     <lv_obj name="main_area"
             height="100%" style_flex_grow="1"
-            flex_flow="column" style_pad_all="0" style_pad_gap="6"
+            flex_flow="column" style_pad_all="0" style_pad_gap="#space_sm"
             scrollable="false" style_bg_opa="0" style_border_width="0">
 
       <!-- Chart container: the lv_chart is created here by C++ -->
       <lv_obj name="annealr_chart_container"
               width="100%" style_flex_grow="1"
               style_bg_color="#overlay_bg" style_bg_opa="255"
-              style_radius="8" style_pad_all="0"
+              style_radius="#border_radius" style_pad_all="0"
               style_border_width="0"/>
 
       <!-- Bottom info bar -->
       <lv_obj name="info_bar"
               width="100%" height="content"
-              flex_flow="row" style_pad_all="6" style_pad_gap="14"
+              flex_flow="row" style_pad_all="#space_sm" style_pad_gap="#space_lg"
               style_flex_main_place="space_evenly" style_flex_cross_place="start"
               style_bg_color="#card_bg" style_bg_opa="255"
-              style_radius="8" style_border_width="1"
+              style_radius="#border_radius" style_border_width="1"
               style_border_color="#border" style_border_opa="80"
               scrollable="false">
 
         <!-- Chamber: Current + Target stacked -->
         <lv_obj width="content" height="content"
-                flex_flow="column" style_pad_gap="2"
+                flex_flow="column" style_pad_gap="#space_xxs"
                 scrollable="false" style_bg_opa="0" style_border_width="0">
           <lv_label text="Chamber" style_text_color="#text_muted"/>
           <lv_obj width="content" height="content"
-                  flex_flow="row" style_pad_gap="4"
+                  flex_flow="row" style_pad_gap="#space_xs"
                   scrollable="false" style_bg_opa="0" style_border_width="0">
-            <lv_label text="Current:" style_text_color="#FF7326"/>
+            <lv_label text="Current:" style_text_color="#chart_actual"/>
             <lv_label name="chamber_temp_label"
                       bind_text="annealr_chamber_temp_text"
-                      style_text_color="#FF7326"/>
+                      style_text_color="#chart_actual"/>
           </lv_obj>
           <lv_obj width="content" height="content"
-                  flex_flow="row" style_pad_gap="4"
+                  flex_flow="row" style_pad_gap="#space_xs"
                   scrollable="false" style_bg_opa="0" style_border_width="0">
-            <lv_label text="Target:" style_text_color="#66B2FF"/>
+            <lv_label text="Target:" style_text_color="#chart_planned"/>
             <lv_label name="chamber_target_label"
                       bind_text="annealr_chamber_target_text"
-                      style_text_color="#66B2FF"/>
+                      style_text_color="#chart_planned"/>
           </lv_obj>
         </lv_obj>
 
         <!-- Stage: label + rate stacked -->
         <lv_obj width="content" height="content"
-                flex_flow="column" style_pad_gap="2"
+                flex_flow="column" style_pad_gap="#space_xxs"
                 scrollable="false" style_bg_opa="0" style_border_width="0">
           <lv_label text="Stage" style_text_color="#text_muted"/>
           <lv_label name="stage_label"
@@ -150,7 +150,7 @@
 
         <!-- Profile -->
         <lv_obj width="content" height="content"
-                flex_flow="column" style_pad_gap="2"
+                flex_flow="column" style_pad_gap="#space_xxs"
                 scrollable="false" style_bg_opa="0" style_border_width="0">
           <lv_label text="Profile" style_text_color="#text_muted"/>
           <lv_label name="profile_label"

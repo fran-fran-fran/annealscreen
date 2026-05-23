@@ -75,7 +75,14 @@ void ThemeManager::apply() {
         colors_["warning"]     = lv_color_hex(0xFFA726);
         colors_["danger"]      = lv_color_hex(0xEF5350);
         colors_["focus"]       = lv_color_hex(0x6C63FF);
+        colors_["chart_actual"]  = lv_color_hex(0xFF7326);
+        colors_["chart_planned"] = lv_color_hex(0x66B2FF);
     }
+
+    // Chart colors must always be available (XML + C++ reference them).
+    // Guarded so theme JSONs can override.
+    if (!has_color("chart_actual"))  colors_["chart_actual"]  = lv_color_hex(0xFF7326);
+    if (!has_color("chart_planned")) colors_["chart_planned"] = lv_color_hex(0x66B2FF);
 
     // Register color tokens as XML consts so #token_name works in XML
     for (const auto& [name, color] : colors_) {

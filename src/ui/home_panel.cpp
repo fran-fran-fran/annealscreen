@@ -22,9 +22,9 @@ extern "C" { LV_FONT_DECLARE(mdi_icons_24); }
 
 namespace anneal {
 
-// Chart series colors
-static const lv_color_t COLOR_PLANNED = lv_color_hex(0x66B2FF);
-static const lv_color_t COLOR_ACTUAL  = lv_color_hex(0xFF7326);
+// Chart series colors — sourced from theme tokens so XML and C++ stay in sync
+static lv_color_t get_planned_color() { return ui_theme_get_color("chart_planned"); }
+static lv_color_t get_actual_color() { return ui_theme_get_color("chart_actual"); }
 
 // ── Singleton ───────────────────────────────────────────────────────────
 
@@ -120,9 +120,9 @@ lv_obj_t* HomePanel::create(lv_obj_t* parent) {
 
             // Add series: target setpoint curve + actual temperature
             planned_series_ = anneal_temp_graph_add_series(
-                graph_, "Target", COLOR_PLANNED);
+                graph_, "Target", get_planned_color());
             actual_series_ = anneal_temp_graph_add_series(
-                graph_, "Actual", COLOR_ACTUAL);
+                graph_, "Actual", get_actual_color());
 
             // Target series: dashed line + horizontal marker at latest value
             anneal_temp_graph_set_series_dashed(graph_, planned_series_, true);
