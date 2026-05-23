@@ -174,7 +174,7 @@ static void start_connection(const std::string& host, int port,
         g_client->query_config([](const nlohmann::json& config) {
             auto config_json = config.dump();
             anneal::ui::queue_update([config_json]() {
-                AnnealrState::instance().load_profiles_from_config(config_json);
+                anneal::AnnealrState::instance().load_profiles_from_config(config_json);
             });
         });
     };
@@ -186,7 +186,7 @@ static void start_connection(const std::string& host, int port,
     g_client->on_status_update = [heater](const nlohmann::json& data) {
         // Route annealr status
         if (data.contains("annealr")) {
-            AnnealrState::instance().update_from_status(data["annealr"].dump());
+            anneal::AnnealrState::instance().update_from_status(data["annealr"].dump());
         }
 
         // Route heater temperature
@@ -204,7 +204,7 @@ static void start_connection(const std::string& host, int port,
                 // AnnealrState::instance() and do everything inside
                 // queue_update where run_elapsed_s_subject() is also safe.
                 anneal::ui::queue_update([temp, target]() {
-                    auto& state = AnnealrState::instance();
+                    auto& state = anneal::AnnealrState::instance();
                     float elapsed = static_cast<float>(
                         lv_subject_get_int(state.run_elapsed_s_subject()));
 

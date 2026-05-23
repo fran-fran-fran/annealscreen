@@ -3,6 +3,7 @@
 #include "home_panel.h"
 #include "static_panel_registry.h"
 #include "static_subject_registry.h"
+#include "theme_manager.h"
 #include "ui_update_queue.h"
 
 #include "helix-xml/helix_xml.h"
