@@ -190,13 +190,13 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
         else
             std::snprintf(buf, 16, "%dm", mins);
 
-        // Keep label within content area (labels are 50px wide, centered)
-        if (label_x + 25 > content_x2) label_x = content_x2 - 25;
-        if (label_x - 25 < content_x1) label_x = content_x1 + 25;
+        // Keep label within content area (labels are 60px wide, centered)
+        if (label_x + 30 > content_x2) label_x = content_x2 - 30;
+        if (label_x - 30 < content_x1) label_x = content_x1 + 30;
 
         lv_area_t label_area = {
-            label_x - 25, label_y,
-            label_x + 25, label_y + label_height
+            label_x - 30, label_y,
+            label_x + 30, label_y + label_height
         };
         label_dsc.text = buf;
         lv_draw_label(layer, &label_dsc, &label_area);
@@ -436,7 +436,7 @@ anneal_temp_graph_t* anneal_temp_graph_create(lv_obj_t* parent) {
     // Padding: space for axis labels
     int32_t label_height = lv_font_get_line_height(graph->axis_font);
     lv_obj_set_style_pad_top(graph->chart, 10, LV_PART_MAIN);
-    lv_obj_set_style_pad_right(graph->chart, 10, LV_PART_MAIN);
+    lv_obj_set_style_pad_right(graph->chart, 40, LV_PART_MAIN);
     lv_obj_set_style_pad_left(graph->chart, graph->y_axis_width + 4, LV_PART_MAIN);
     lv_obj_set_style_pad_bottom(graph->chart, 6 + label_height + 10, LV_PART_MAIN);
 
