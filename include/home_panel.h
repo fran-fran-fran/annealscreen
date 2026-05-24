@@ -31,7 +31,7 @@ class HomePanel {
     void update_button_states();
 
     // Chart management — called from main.cpp status handler
-    void push_temperature(float temp_c, float elapsed_s);
+    bool push_temperature(float temp_c, float elapsed_s);
     void push_target_setpoint(float target_c, float elapsed_s);
     void load_planned_profile(const AnnealrProfile& profile, float start_temp);
     void clear_chart();
@@ -66,6 +66,7 @@ class HomePanel {
     int actual_series_  = -1;
 
     lv_timer_t* chart_timer_ = nullptr;
+    float last_push_s_ = 0;  // rate-limit chart pushes to ~1 Hz
     std::vector<ObserverGuard> observers_;
 
     // Panel-local subjects

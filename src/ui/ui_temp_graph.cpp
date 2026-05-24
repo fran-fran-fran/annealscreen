@@ -73,8 +73,9 @@ static void draw_grid_lines_cb(lv_event_t* e) {
         lv_draw_line(layer, &line_dsc);
     }
 
-    // Vertical grid lines (10 divisions)
-    constexpr int V_DIV = 10;
+    // Vertical grid lines: 12 divisions for fine grid,
+    // X-axis labels sit at every 2nd line (6 spacing).
+    constexpr int V_DIV = 12;
     for (int i = 0; i <= V_DIV; ++i) {
         int32_t x = cx1 + (cw * i) / V_DIV;
         line_dsc.p1 = {x, cy1};
@@ -135,7 +136,8 @@ static void draw_y_axis_labels_cb(lv_event_t* e) {
     }
 }
 
-// X-axis elapsed time labels (centered below content area)
+// X-axis elapsed time labels — drawn at 6 evenly-spaced positions
+// across the content width, aligned with vertical grid lines.
 static void draw_x_axis_labels_cb(lv_event_t* e) {
     lv_obj_t* chart = lv_event_get_target_obj(e);
     lv_layer_t* layer = lv_event_get_layer(e);
@@ -147,10 +149,10 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
     int32_t pad_left   = lv_obj_get_style_pad_left(chart, LV_PART_MAIN);
     int32_t pad_right  = lv_obj_get_style_pad_right(chart, LV_PART_MAIN);
     int32_t pad_bottom = lv_obj_get_style_pad_bottom(chart, LV_PART_MAIN);
-    int32_t content_x1 = coords.x1 + pad_left;
-    int32_t content_x2 = coords.x2 - pad_right;
-    int32_t content_width = content_x2 - content_x1;
-    if (content_width <= 0) return;
+    int32_t cx1 = coords.x1 + pad_left;
+    int32_t cx2 = coords.x2 - pad_right;
+    int32_t cw = cx2 - cx1;
+    if (cw <= 0) return;
 
     int32_t label_height = lv_font_get_line_height(graph->axis_font);
     int32_t label_y = coords.y2 - pad_bottom + 4;
@@ -161,38 +163,33 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
     label_dsc.font = graph->axis_font;
     label_dsc.align = LV_TEXT_ALIGN_CENTER;
 
-    // Always show a fixed 30-minute window. During the first 30 min
-    // the X-axis spans 0–30m (future space on the right is intentional).
-    // After 30 min the window slides to track the latest data.
-    constexpr float kWindowS = 1800.0f;  // 30 minutes
+    // 30-minute window, 6 divisions = 7 labels at 5-minute intervals.
+    // During the first 30 min labels hang at fixed positions showing
+    // the full window. After 30 min the window slides.
+    constexpr float kWindowS = 1800.0f;   // 30 minutes
+    constexpr int   kDivs    = 6;          // matches V_DIV in grid
+    constexpr float kStepS   = kWindowS / kDivs;  // 300s = 5 min
+
     float right_s = graph->elapsed_latest_s;
     if (right_s < kWindowS) right_s = kWindowS;
     float left_s = right_s - kWindowS;
-
-    // Label interval: 5-minute markings for a 30-minute window
-    constexpr float interval_s = 300.0f;
-
-    float first_label_s = std::ceil(left_s / interval_s) * interval_s;
 
     static char x_bufs[8][16];
     static int x_idx = 0;
     x_idx = 0;
 
-    for (float t = first_label_s; t <= right_s && x_idx < 8; t += interval_s) {
-        float frac = (t - left_s) / kWindowS;
-        if (frac < 0 || frac > 1) continue;
-        int32_t label_x = content_x1 + static_cast<int32_t>(frac * content_width);
-
+    for (int i = 0; i <= kDivs && x_idx < 8; ++i) {
+        // Fixed pixel position, aligned with grid line
+        int32_t label_x = cx1 + (cw * i) / kDivs;
+        // Corresponding time
+        float t = left_s + kStepS * i;
         int mins = static_cast<int>(t / 60.0f);
+
         char* buf = x_bufs[x_idx++ % 8];
         if (mins >= 60)
             std::snprintf(buf, 16, "%dh%dm", mins / 60, mins % 60);
         else
             std::snprintf(buf, 16, "%dm", mins);
-
-        // Keep label within content area (labels are 60px wide, centered)
-        if (label_x + 30 > content_x2) label_x = content_x2 - 30;
-        if (label_x - 30 < content_x1) label_x = content_x1 + 30;
 
         lv_area_t label_area = {
             label_x - 30, label_y,
@@ -200,6 +197,81 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
         };
         label_dsc.text = buf;
         lv_draw_label(layer, &label_dsc, &label_area);
+    }
+}
+
+// Redraw any series marked as dashed with actual dash_pattern, since
+// lv_chart lacks native per-series line-dash support. Runs in DRAW_POST
+// after LVGL has drawn the solid lines — we overdraw on top.
+static void draw_dashed_series_cb(lv_event_t* e) {
+    lv_obj_t* chart = lv_event_get_target_obj(e);
+    lv_layer_t* layer = lv_event_get_layer(e);
+    auto* graph = static_cast<anneal_temp_graph_t*>(lv_event_get_user_data(e));
+    if (!layer || !graph || !graph->chart) return;
+
+    lv_area_t coords;
+    lv_obj_get_coords(chart, &coords);
+    int32_t pad_left   = lv_obj_get_style_pad_left(chart, LV_PART_MAIN);
+    int32_t pad_right  = lv_obj_get_style_pad_right(chart, LV_PART_MAIN);
+    int32_t pad_top    = lv_obj_get_style_pad_top(chart, LV_PART_MAIN);
+    int32_t pad_bottom = lv_obj_get_style_pad_bottom(chart, LV_PART_MAIN);
+    int32_t cx1 = coords.x1 + pad_left;
+    int32_t cx2 = coords.x2 - pad_right;
+    int32_t cy1 = coords.y1 + pad_top;
+    int32_t cy2 = coords.y2 - pad_bottom;
+    int32_t cw = cx2 - cx1;
+    int32_t ch = cy2 - cy1;
+    if (cw <= 1 || ch <= 0) return;
+
+    int32_t y_min = static_cast<int32_t>(graph->min_temp * ANNEAL_TEMP_SCALE);
+    int32_t y_max = static_cast<int32_t>(graph->max_temp * ANNEAL_TEMP_SCALE);
+    int32_t y_range = y_max - y_min;
+    if (y_range <= 0) return;
+
+    uint32_t pc = lv_chart_get_point_count(graph->chart);
+    if (pc < 2) return;
+
+    for (int s = 0; s < ANNEAL_GRAPH_MAX_SERIES; ++s) {
+        auto* meta = &graph->series_meta[s];
+        if (!meta->chart_series || !meta->dashed) continue;
+
+        int32_t* y_data = lv_chart_get_y_array(graph->chart, meta->chart_series);
+        if (!y_data) continue;
+        uint32_t sp = lv_chart_get_x_start_point(graph->chart, meta->chart_series);
+
+        lv_draw_line_dsc_t line_dsc;
+        lv_draw_line_dsc_init(&line_dsc);
+        line_dsc.color = meta->color;
+        line_dsc.width = 4;
+        line_dsc.opa  = LV_OPA_COVER;
+        line_dsc.dash_width = 8;
+        line_dsc.dash_gap   = 5;
+        line_dsc.round_start = 1;
+        line_dsc.round_end   = 1;
+
+        lv_point_t prev_pt = {0, 0};
+        bool prev_valid = false;
+
+        for (uint32_t i = 0; i < pc; ++i) {
+            int32_t val = y_data[(sp + i) % pc];
+            if (val == LV_CHART_POINT_NONE) {
+                prev_valid = false;
+                continue;
+            }
+            lv_point_t pt;
+            pt.x = cx1 + static_cast<int32_t>((int64_t)i * cw / (pc - 1));
+            pt.y = cy2 - lv_map(val, y_min, y_max, 0, ch);
+            if (pt.y < cy1) pt.y = cy1;
+            if (pt.y > cy2) pt.y = cy2;
+
+            if (prev_valid) {
+                line_dsc.p1 = prev_pt;
+                line_dsc.p2 = pt;
+                lv_draw_line(layer, &line_dsc);
+            }
+            prev_pt = pt;
+            prev_valid = true;
+        }
     }
 }
 
@@ -441,7 +513,7 @@ anneal_temp_graph_t* anneal_temp_graph_create(lv_obj_t* parent) {
     lv_obj_set_style_pad_bottom(graph->chart, 6 + label_height + 10, LV_PART_MAIN);
 
     // Series line style
-    lv_obj_set_style_line_width(graph->chart, 2, LV_PART_ITEMS);
+    lv_obj_set_style_line_width(graph->chart, 4, LV_PART_ITEMS);
     lv_obj_set_style_line_opa(graph->chart, LV_OPA_COVER, LV_PART_ITEMS);
 
     // Hide point indicators
@@ -456,6 +528,7 @@ anneal_temp_graph_t* anneal_temp_graph_create(lv_obj_t* parent) {
     lv_obj_add_event_cb(graph->chart, draw_x_axis_labels_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_y_axis_labels_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_target_lines_cb, LV_EVENT_DRAW_POST, graph);
+    lv_obj_add_event_cb(graph->chart, draw_dashed_series_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_h_marker_cb, LV_EVENT_DRAW_POST, graph);
     lv_obj_add_event_cb(graph->chart, draw_legend_cb, LV_EVENT_DRAW_POST, graph);
 
@@ -640,11 +713,7 @@ void anneal_temp_graph_set_series_dashed(anneal_temp_graph_t* graph,
     auto* meta = find_series(graph, series_id);
     if (!meta) return;
     meta->dashed = dashed;
-    // Apply dashed style via line dash on the series
-    // Note: lv_chart doesn't natively support per-series dashing,
-    // but we can set the style on the chart ITEMS part when only
-    // one series is dashed. For multiple, would need custom draw.
-    // For now, visual differentiation comes from opacity + legend label.
+    // Dashed rendering handled by draw_dashed_series_cb (DRAW_POST overlay).
     if (graph->chart) lv_obj_invalidate(graph->chart);
 }
 

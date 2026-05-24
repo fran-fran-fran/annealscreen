@@ -279,10 +279,14 @@ void HomePanel::update_button_states() {
 
 // ── Chart management ────────────────────────────────────────────────────
 
-void HomePanel::push_temperature(float temp_c, float elapsed_s) {
-    if (!graph_ || actual_series_ < 0) return;
+bool HomePanel::push_temperature(float temp_c, float elapsed_s) {
+    if (!graph_ || actual_series_ < 0) return false;
+    // Rate-limit to ~1 Hz after the first push; point_count=1800 = 30 min
+    if (last_push_s_ > 0 && elapsed_s - last_push_s_ < 0.9f) return false;
+    last_push_s_ = elapsed_s;
     anneal_temp_graph_push_value_with_time(graph_, actual_series_,
                                             temp_c, elapsed_s);
+    return true;
 }
 
 void HomePanel::push_target_setpoint(float target_c, float elapsed_s) {
@@ -407,6 +411,7 @@ void HomePanel::on_start_clicked(lv_event_t*) {
         self.graph_->elapsed_origin_s = 0;
         self.graph_->elapsed_latest_s = 1800;
         self.graph_->visible_point_count = 0;
+        self.last_push_s_ = 0;
     }
 
     self.state_.clear_temp_history();

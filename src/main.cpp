@@ -226,14 +226,12 @@ static void start_connection(const std::string& host, int port,
 
                     auto& home = anneal::HomePanel::instance();
                     if (state.is_run_active()) {
-                        home.push_temperature(temp, elapsed);
-                        // Push the current target value — may be from this
-                        // notification (has_target) or a prior one (stored
-                        // in chamber_target_ subject). Push every tick so
-                        // the target series always has a point.
-                        float cur_target = lv_subject_get_int(
-                            state.chamber_target_subject()) / 10.0f;
-                        home.push_target_setpoint(cur_target, elapsed);
+                        // Rate-limit chart pushes to ~1 Hz so 1800 pts = 30 min
+                        if (home.push_temperature(temp, elapsed)) {
+                            float cur_target = lv_subject_get_int(
+                                state.chamber_target_subject()) / 10.0f;
+                            home.push_target_setpoint(cur_target, elapsed);
+                        }
                     }
 
                     if (state.is_run_active()) {
