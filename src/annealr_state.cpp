@@ -276,6 +276,7 @@ void AnnealrState::load_profiles_from_config(const std::string& config_json) {
 
     if (initialized_) {
         int v = lv_subject_get_int(&profiles_version_);
+        spdlog::info("[AnnealrState] Bumping profiles version {} → {}", v, v + 1);
         lv_subject_set_int(&profiles_version_, v + 1);
     }
 }

@@ -195,7 +195,10 @@ static void start_connection(const std::string& host, int port,
             const auto& h = data[heater_key];
             if (h.contains("temperature")) {
                 float temp = h["temperature"].get<float>();
-                float target = h.value("target", 0.0f);
+                bool has_target = h.contains("target");
+                float target = has_target ? h["target"].get<float>() : 0.0f;
+                spdlog::debug("[Main] Heater update: temp={:.1f} target={:.1f} has_target={}",
+                              temp, target, has_target);
 
                 // Defer ALL LVGL access + state reads to main thread.
                 // The previous lambda captured &state (dangling after
@@ -203,28 +206,35 @@ static void start_connection(const std::string& host, int port,
                 // background thread (data race on state_buf_). Fixed: use
                 // AnnealrState::instance() and do everything inside
                 // queue_update where run_elapsed_s_subject() is also safe.
-                anneal::ui::queue_update([temp, target]() {
+                anneal::ui::queue_update([temp, target, has_target]() {
                     auto& state = anneal::AnnealrState::instance();
                     float elapsed = static_cast<float>(
                         lv_subject_get_int(state.run_elapsed_s_subject()));
 
                     lv_subject_set_int(state.chamber_temp_subject(),
                                        static_cast<int>(temp * 10));
-                    lv_subject_set_int(state.chamber_target_subject(),
-                                       static_cast<int>(target * 10));
                     char buf[64];
                     std::snprintf(buf, sizeof(buf), "Current: %.1f\xC2\xB0""C", temp);
                     lv_subject_copy_string(state.chamber_current_text_subject(), buf);
 
-                    std::snprintf(buf, sizeof(buf), "Target: %.1f\xC2\xB0""C", target);
-                    lv_subject_copy_string(state.chamber_target_text_subject(), buf);
+                    if (has_target) {
+                        lv_subject_set_int(state.chamber_target_subject(),
+                                           static_cast<int>(target * 10));
+                        std::snprintf(buf, sizeof(buf), "Target: %.1f\xC2\xB0""C", target);
+                        lv_subject_copy_string(state.chamber_target_text_subject(), buf);
+                    }
 
                     auto& home = anneal::HomePanel::instance();
                     if (state.is_run_active()) {
                         home.push_temperature(temp, elapsed);
-                        home.push_target_setpoint(target, elapsed);
+                        // Push the current target value — may be from this
+                        // notification (has_target) or a prior one (stored
+                        // in chamber_target_ subject). Push every tick so
+                        // the target series always has a point.
+                        float cur_target = lv_subject_get_int(
+                            state.chamber_target_subject()) / 10.0f;
+                        home.push_target_setpoint(cur_target, elapsed);
                     }
-                    home.update_chart_target(target);
 
                     if (state.is_run_active()) {
                         state.record_temperature(temp, elapsed);

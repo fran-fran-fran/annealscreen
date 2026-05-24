@@ -161,21 +161,16 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
     label_dsc.font = graph->axis_font;
     label_dsc.align = LV_TEXT_ALIGN_CENTER;
 
-    // Determine total time span from point count (1 sample/sec)
-    float total_time_s = static_cast<float>(graph->point_count);
-
-    // Choose label interval based on total time
-    float interval_s;
-    if (total_time_s < 120)        interval_s = 30;
-    else if (total_time_s < 600)   interval_s = 60;
-    else if (total_time_s < 1800)  interval_s = 300;
-    else if (total_time_s < 7200)  interval_s = 600;
-    else                           interval_s = 1800;
-
-    // Elapsed time at left and right edges
+    // Always show a fixed 30-minute window. During the first 30 min
+    // the X-axis spans 0–30m (future space on the right is intentional).
+    // After 30 min the window slides to track the latest data.
+    constexpr float kWindowS = 1800.0f;  // 30 minutes
     float right_s = graph->elapsed_latest_s;
-    float left_s = right_s - total_time_s;
-    if (left_s < 0) left_s = 0;
+    if (right_s < kWindowS) right_s = kWindowS;
+    float left_s = right_s - kWindowS;
+
+    // Label interval: 5-minute markings for a 30-minute window
+    constexpr float interval_s = 300.0f;
 
     float first_label_s = std::ceil(left_s / interval_s) * interval_s;
 
@@ -184,7 +179,7 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
     x_idx = 0;
 
     for (float t = first_label_s; t <= right_s && x_idx < 8; t += interval_s) {
-        float frac = (t - left_s) / total_time_s;
+        float frac = (t - left_s) / kWindowS;
         if (frac < 0 || frac > 1) continue;
         int32_t label_x = content_x1 + static_cast<int32_t>(frac * content_width);
 
@@ -194,6 +189,10 @@ static void draw_x_axis_labels_cb(lv_event_t* e) {
             std::snprintf(buf, 16, "%dh%dm", mins / 60, mins % 60);
         else
             std::snprintf(buf, 16, "%dm", mins);
+
+        // Keep label within content area (labels are 50px wide, centered)
+        if (label_x + 25 > content_x2) label_x = content_x2 - 25;
+        if (label_x - 25 < content_x1) label_x = content_x1 + 25;
 
         lv_area_t label_area = {
             label_x - 25, label_y,
@@ -557,12 +556,7 @@ void anneal_temp_graph_push_value(anneal_temp_graph_t* graph,
     auto* meta = find_series(graph, series_id);
     if (!meta) return;
 
-    if (!meta->first_value_received) {
-        meta->first_value_received = true;
-        lv_chart_set_all_values(graph->chart, meta->chart_series,
-                                static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
-    }
-
+    meta->first_value_received = true;
     meta->latest_value = temp;
     lv_chart_set_next_value(graph->chart, meta->chart_series,
                             static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
@@ -574,11 +568,7 @@ void anneal_temp_graph_push_value_with_time(anneal_temp_graph_t* graph,
     auto* meta = find_series(graph, series_id);
     if (!meta) return;
 
-    if (!meta->first_value_received) {
-        meta->first_value_received = true;
-        lv_chart_set_all_values(graph->chart, meta->chart_series,
-                                static_cast<int32_t>(temp * ANNEAL_TEMP_SCALE));
-    }
+    meta->first_value_received = true;
 
     // Track elapsed time for X-axis labels
     if (graph->elapsed_origin_s == 0 && elapsed_s > 0)

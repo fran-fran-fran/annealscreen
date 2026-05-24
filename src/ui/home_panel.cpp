@@ -125,9 +125,8 @@ lv_obj_t* HomePanel::create(lv_obj_t* parent) {
             actual_series_ = anneal_temp_graph_add_series(
                 graph_, "Actual", get_actual_color());
 
-            // Target series: dashed line + horizontal marker at latest value
+            // Target series: dashed line, no h-marker
             anneal_temp_graph_set_series_dashed(graph_, planned_series_, true);
-            anneal_temp_graph_set_series_h_marker(graph_, planned_series_, true);
 
             // Configure Y-axis: 50-degree increments
             anneal_temp_graph_set_y_axis(graph_, 50.0f, true);
@@ -164,10 +163,15 @@ void HomePanel::setup_observers() {
 // ── Profile list ────────────────────────────────────────────────────────
 
 void HomePanel::populate_profile_list() {
-    if (!profile_list_) return;
-    lv_obj_clean(profile_list_);
+    if (!profile_list_) {
+        spdlog::warn("[HomePanel] populate_profile_list: profile_list_ is null");
+        return;
+    }
 
     const auto& profiles = state_.profiles();
+    spdlog::info("[HomePanel] Populating profile list ({} profiles)", profiles.size());
+
+    lv_obj_clean(profile_list_);
 
     for (const auto& profile : profiles) {
         lv_obj_t* btn = lv_button_create(profile_list_);
@@ -255,6 +259,22 @@ void HomePanel::update_button_states() {
     lv_subject_set_int(&can_pause_,  is_running ? 1 : 0);
     lv_subject_set_int(&can_resume_, is_paused  ? 1 : 0);
     lv_subject_set_int(&can_cancel_, can_cancel ? 1 : 0);
+
+    // Lock profile list buttons during an active run
+    bool locked = state_.is_run_active();
+    if (profile_list_) {
+        uint32_t n = lv_obj_get_child_cnt(profile_list_);
+        for (uint32_t i = 0; i < n; ++i) {
+            lv_obj_t* child = lv_obj_get_child(profile_list_, i);
+            if (locked) {
+                lv_obj_add_state(child, LV_STATE_DISABLED);
+                lv_obj_remove_flag(child, LV_OBJ_FLAG_CLICKABLE);
+            } else {
+                lv_obj_remove_state(child, LV_STATE_DISABLED);
+                lv_obj_add_flag(child, LV_OBJ_FLAG_CLICKABLE);
+            }
+        }
+    }
 }
 
 // ── Chart management ────────────────────────────────────────────────────
@@ -266,7 +286,7 @@ void HomePanel::push_temperature(float temp_c, float elapsed_s) {
 }
 
 void HomePanel::push_target_setpoint(float target_c, float elapsed_s) {
-    if (!graph_ || planned_series_ < 0 || target_c <= 0) return;
+    if (!graph_ || planned_series_ < 0) return;
     anneal_temp_graph_push_value_with_time(graph_, planned_series_,
                                             target_c, elapsed_s);
 }
@@ -344,12 +364,6 @@ void HomePanel::clear_chart() {
     anneal_temp_graph_clear(graph_);
 }
 
-void HomePanel::update_chart_target(float target_c) {
-    if (!graph_ || actual_series_ < 0) return;
-    anneal_temp_graph_set_series_target(graph_, actual_series_,
-                                         target_c, target_c > 0);
-}
-
 // ── GCode dispatch ──────────────────────────────────────────────────────
 
 void HomePanel::send_gcode(const char* command) {
@@ -365,16 +379,33 @@ void HomePanel::on_start_clicked(lv_event_t*) {
     auto& self = HomePanel::instance();
     if (self.selected_profile_buf_[0] == '\0') return;
 
-    // Clear actual series data for fresh run
-    if (self.graph_ && self.actual_series_ >= 0) {
-        auto* meta = &self.graph_->series_meta[self.actual_series_];
-        if (meta->chart_series) {
-            lv_chart_set_all_values(self.graph_->chart, meta->chart_series,
-                                    LV_CHART_POINT_NONE);
-            meta->first_value_received = false;
+    // Clear both series for a fresh start. Point count = 1800 = 30-minute
+    // window at 1 sample/sec. The planned curve (pre-loaded on profile
+    // selection) vanishes, replaced by live target setpoints pushed to the
+    // same series. The X-axis always shows a full 30m window.
+    if (self.graph_) {
+        // Clear actual series
+        if (self.actual_series_ >= 0) {
+            auto* meta = &self.graph_->series_meta[self.actual_series_];
+            if (meta->chart_series) {
+                lv_chart_set_all_values(self.graph_->chart, meta->chart_series,
+                                        LV_CHART_POINT_NONE);
+                meta->first_value_received = false;
+            }
         }
+        // Clear planned series (vanish the pre-loaded curve)
+        if (self.planned_series_ >= 0) {
+            auto* meta = &self.graph_->series_meta[self.planned_series_];
+            if (meta->chart_series) {
+                lv_chart_set_all_values(self.graph_->chart, meta->chart_series,
+                                        LV_CHART_POINT_NONE);
+                meta->first_value_received = false;
+            }
+        }
+        // 30-minute window at ~1 sample/sec
+        anneal_temp_graph_set_point_count(self.graph_, 1800);
         self.graph_->elapsed_origin_s = 0;
-        self.graph_->elapsed_latest_s = 0;
+        self.graph_->elapsed_latest_s = 1800;
         self.graph_->visible_point_count = 0;
     }
 

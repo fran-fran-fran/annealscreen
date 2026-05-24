@@ -35,7 +35,6 @@ class HomePanel {
     void push_target_setpoint(float target_c, float elapsed_s);
     void load_planned_profile(const AnnealrProfile& profile, float start_temp);
     void clear_chart();
-    void update_chart_target(float target_c);
 
     // Access the graph for external configuration
     anneal_temp_graph_t* graph() const { return graph_; }
