@@ -68,8 +68,10 @@ static void draw_grid_lines_cb(lv_event_t* e) {
     constexpr int H_DIV = 5;
     for (int i = 0; i <= H_DIV; ++i) {
         int32_t y = cy1 + (ch * i) / H_DIV;
-        line_dsc.p1 = {cx1, y};
-        line_dsc.p2 = {cx2, y};
+        line_dsc.p1 = {static_cast<lv_value_precise_t>(cx1),
+                        static_cast<lv_value_precise_t>(y)};
+        line_dsc.p2 = {static_cast<lv_value_precise_t>(cx2),
+                        static_cast<lv_value_precise_t>(y)};
         lv_draw_line(layer, &line_dsc);
     }
 
@@ -78,8 +80,10 @@ static void draw_grid_lines_cb(lv_event_t* e) {
     constexpr int V_DIV = 12;
     for (int i = 0; i <= V_DIV; ++i) {
         int32_t x = cx1 + (cw * i) / V_DIV;
-        line_dsc.p1 = {x, cy1};
-        line_dsc.p2 = {x, cy2};
+        line_dsc.p1 = {static_cast<lv_value_precise_t>(x),
+                        static_cast<lv_value_precise_t>(cy1)};
+        line_dsc.p2 = {static_cast<lv_value_precise_t>(x),
+                        static_cast<lv_value_precise_t>(cy2)};
         lv_draw_line(layer, &line_dsc);
     }
 }
@@ -249,7 +253,7 @@ static void draw_dashed_series_cb(lv_event_t* e) {
         line_dsc.round_start = 1;
         line_dsc.round_end   = 1;
 
-        lv_point_t prev_pt = {0, 0};
+        lv_point_precise_t prev_pt = {0, 0};
         bool prev_valid = false;
 
         for (uint32_t i = 0; i < pc; ++i) {
@@ -258,11 +262,11 @@ static void draw_dashed_series_cb(lv_event_t* e) {
                 prev_valid = false;
                 continue;
             }
-            lv_point_t pt;
-            pt.x = cx1 + static_cast<int32_t>((int64_t)i * cw / (pc - 1));
-            pt.y = cy2 - lv_map(val, y_min, y_max, 0, ch);
-            if (pt.y < cy1) pt.y = cy1;
-            if (pt.y > cy2) pt.y = cy2;
+            lv_point_precise_t pt;
+            pt.x = static_cast<lv_value_precise_t>(cx1 + static_cast<int32_t>((int64_t)i * cw / (pc - 1)));
+            pt.y = static_cast<lv_value_precise_t>(cy2 - lv_map(val, y_min, y_max, 0, ch));
+            if (pt.y < cy1) pt.y = static_cast<lv_value_precise_t>(cy1);
+            if (pt.y > cy2) pt.y = static_cast<lv_value_precise_t>(cy2);
 
             if (prev_valid) {
                 line_dsc.p1 = prev_pt;
@@ -318,8 +322,10 @@ static void draw_target_lines_cb(lv_event_t* e) {
         line_dsc.width = 1;
         line_dsc.dash_width = 6;
         line_dsc.dash_gap = 4;
-        line_dsc.p1 = {cx1, abs_y};
-        line_dsc.p2 = {cx2, abs_y};
+        line_dsc.p1 = {static_cast<lv_value_precise_t>(cx1),
+                        static_cast<lv_value_precise_t>(abs_y)};
+        line_dsc.p2 = {static_cast<lv_value_precise_t>(cx2),
+                        static_cast<lv_value_precise_t>(abs_y)};
         lv_draw_line(layer, &line_dsc);
     }
 }
@@ -386,8 +392,10 @@ static void draw_h_marker_cb(lv_event_t* e) {
             line_dsc.dash_width = 4;
             line_dsc.dash_gap = 3;
             line_dsc.opa = LV_OPA_40;
-            line_dsc.p1 = {marker_x, abs_y};
-            line_dsc.p2 = {cx2, abs_y};
+            line_dsc.p1 = {static_cast<lv_value_precise_t>(marker_x),
+                            static_cast<lv_value_precise_t>(abs_y)};
+            line_dsc.p2 = {static_cast<lv_value_precise_t>(cx2),
+                            static_cast<lv_value_precise_t>(abs_y)};
             lv_draw_line(layer, &line_dsc);
         }
     }
